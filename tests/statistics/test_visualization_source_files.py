@@ -1,7 +1,9 @@
 import json
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
+from annofabapi.models import JobStatus
 
 from annofabcli.statistics.visualization.visualization_source_files import VisualizationSourceFiles
 
@@ -53,3 +55,31 @@ class TestVisualizationSourceFiles:
         # 期待値: 120秒 = 2分、180秒 = 3分
         expected = {"task1": 2.0, "task2": 3.0}
         assert result == expected
+
+
+@pytest.mark.parametrize("with_annotation", [False, True])
+def test_write_latest_files_submits_selected_updates_before_waiting(tmp_path, with_annotation):
+    service = Mock()
+    for name in ["post_project_tasks_update", "post_project_inputs_update", "post_annotation_archive_update"]:
+        getattr(service.api, name).return_value = ({"job": {"job_id": "job"}}, None)
+
+    def wait_for_job(*_args, **_kwargs):
+        service.api.post_project_tasks_update.assert_called_once_with("p")
+        service.api.post_project_inputs_update.assert_called_once_with("p")
+        assert service.api.post_annotation_archive_update.call_count == (1 if with_annotation else 0)
+        assert service.wrapper.download_project_tasks_json.call_count == 0
+        return JobStatus.SUCCEEDED
+
+    service.wrapper.wait_until_job_finished.side_effect = wait_for_job
+    for name in ["download_project_tasks_json", "download_project_inputs_json", "download_project_comments_json", "download_project_task_histories_json", "download_project_task_history_events_json"]:
+        getattr(service.wrapper, name).side_effect = lambda _p, dest: Path(dest).write_text("[]", encoding="utf-8")
+    service.wrapper.download_annotation_zip.side_effect = lambda _p, dest: Path(dest).write_bytes(b"archive")
+    sources = VisualizationSourceFiles(service, "p", tmp_path)
+    sources.write_files(is_latest=True, should_download_annotation_zip=with_annotation)
+    assert json.loads(sources.task_json_path.read_text()) == []
+    assert json.loads(sources.input_data_json_path.read_text()) == []
+    assert sources.annotation_zip_path.exists() is with_annotation
+    assert service.wrapper.wait_until_job_finished.call_count == (3 if with_annotation else 2)
+    assert service.api.post_project_tasks_update.call_count == 1
+    assert service.api.post_project_inputs_update.call_count == 1
+    assert service.api.post_annotation_archive_update.call_count == (1 if with_annotation else 0)

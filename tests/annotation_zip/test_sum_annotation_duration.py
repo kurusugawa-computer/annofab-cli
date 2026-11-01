@@ -2,6 +2,7 @@ import argparse
 import csv
 import json
 import logging
+import shutil
 import zipfile
 from collections.abc import Iterator
 from copy import deepcopy
@@ -13,7 +14,7 @@ import annofabapi
 import pandas
 import pytest
 from annofabapi.credentials import IdPass
-from annofabapi.models import DefaultAnnotationType, InputDataType
+from annofabapi.models import DefaultAnnotationType, InputDataType, JobStatus
 
 from annofabcli.annotation_zip.annotation_name import AnnotationNameTranslator
 from annofabcli.annotation_zip.sum_annotation_duration import (
@@ -27,7 +28,6 @@ from annofabcli.annotation_zip.sum_annotation_duration import (
 )
 from annofabcli.annotation_zip.sum_annotation_duration_by_attribute_value import create_parser as attribute_parser
 from annofabcli.annotation_zip.sum_annotation_duration_by_label import create_parser as label_parser
-from annofabcli.common.download import DownloadingFile
 from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery
 from annofabcli.common.utils import print_csv, print_json
@@ -206,17 +206,8 @@ def test_japanese_name_collision_adds_durations(sources):
     assert rows[0]["annotation_duration_second"] == 30
 
 
-@pytest.mark.parametrize(
-    ("by_attribute", "extra", "output_format"),
-    [
-        (False, [], "pretty_json"),
-        (False, ["--label_name", "car"], "csv"),
-        (True, [], "pretty_json"),
-        (True, ["--attribute_name", "comment"], "pretty_json"),
-        (True, ["--additional_attribute_name", "comment", "--group_by", "task_phase"], "csv"),
-    ],
-)
-def test_command_with_api_boundary_mocks(sources, tmp_path, monkeypatch, caplog, by_attribute, extra, output_format):
+@pytest.fixture
+def command_sources(sources, tmp_path, monkeypatch):
     specs = json.loads(Path("tests/data/annotation_specs/annotation_specs.json").read_text(encoding="utf-8"))
     for label in specs["labels"]:
         label["annotation_type"] = DefaultAnnotationType.RANGE.value
@@ -236,13 +227,52 @@ def test_command_with_api_boundary_mocks(sources, tmp_path, monkeypatch, caplog,
     monkeypatch.setattr(service.api, "get_project", Mock(return_value=({"title": "test", "input_data_type": InputDataType.MOVIE.value}, None)))
     monkeypatch.setattr(service.api, "get_my_member_in_project", Mock(return_value=({"member_role": "owner"}, None)))
     monkeypatch.setattr(service.api, "get_annotation_specs", Mock(return_value=(specs, None)))
-    monkeypatch.setattr(DownloadingFile, "download_input_data_json_to_dir", Mock(return_value=input_json))
-    monkeypatch.setattr(DownloadingFile, "download_task_json_to_dir", Mock(return_value=task_json))
+    monkeypatch.setattr(service.wrapper, "download_project_inputs_json", Mock(side_effect=lambda _p, dest: shutil.copyfile(input_json, dest)))
+    monkeypatch.setattr(service.wrapper, "download_project_tasks_json", Mock(side_effect=lambda _p, dest: shutil.copyfile(task_json, dest)))
+    monkeypatch.setattr(service.wrapper, "download_annotation_zip", Mock(side_effect=lambda _p, dest: shutil.copyfile(annotation_zip, dest)))
+    for name in ["post_project_inputs_update", "post_project_tasks_update", "post_annotation_archive_update"]:
+        monkeypatch.setattr(service.api, name, Mock(return_value=({"job": {"job_id": "job"}}, None)))
+
+    return service, annotation_zip
+
+
+@pytest.mark.parametrize(
+    ("by_attribute", "extra", "output_format"),
+    [
+        (False, [], "pretty_json"),
+        (False, ["--label_name", "car"], "csv"),
+        (True, [], "pretty_json"),
+        (True, ["--attribute_name", "comment"], "pretty_json"),
+        (True, ["--additional_attribute_name", "comment", "--group_by", "task_phase"], "csv"),
+    ],
+)
+@pytest.mark.parametrize("latest", [False, True])
+@pytest.mark.parametrize("local_annotation", [False, True])
+def test_command_with_api_boundary_mocks(command_sources, tmp_path, monkeypatch, caplog, by_attribute, extra, output_format, latest, local_annotation):
+    service, annotation_zip = command_sources
+
+    def wait_for_job(*_args, **_kwargs):
+        service.api.post_project_inputs_update.assert_called_once_with("p")
+        service.api.post_project_tasks_update.assert_called_once_with("p")
+        assert service.api.post_annotation_archive_update.call_count == (0 if local_annotation else 1)
+        service.wrapper.download_project_inputs_json.assert_not_called()
+        service.wrapper.download_project_tasks_json.assert_not_called()
+        service.wrapper.download_annotation_zip.assert_not_called()
+        return JobStatus.SUCCEEDED
+
+    monkeypatch.setattr(service.wrapper, "wait_until_job_finished", Mock(side_effect=wait_for_job))
     parser = attribute_parser() if by_attribute else label_parser()
     output_path = tmp_path / "out"
-    args = parser.parse_args(["--project_id", "p", "--annotation", str(annotation_zip), "--output", str(output_path), "--format", output_format, *extra])
+    options = ["--annotation", str(annotation_zip)] if local_annotation else []
+    if latest:
+        options.append("--latest")
+    args = parser.parse_args(["--project_id", "p", "--output", str(output_path), "--format", output_format, *options, *extra])
     caplog.set_level(logging.INFO, logger="annofabcli.annotation_zip.sum_annotation_duration")
     SumAnnotationDuration(service, AnnofabApiFacade(service), args).run(by_attribute=by_attribute)
+    assert service.api.post_project_inputs_update.call_count == (1 if latest else 0)
+    assert service.api.post_project_tasks_update.call_count == (1 if latest else 0)
+    assert service.api.post_annotation_archive_update.call_count == (1 if latest and not local_annotation else 0)
+    assert service.wrapper.wait_until_job_finished.call_count == ((2 if local_annotation else 3) if latest else 0)
     assert f"3件の入力データから{1 if '--group_by' in extra else 3}件の集計結果を出力します。" in caplog.text
     if output_format == "csv":
         frame = pandas.read_csv(output_path, header=[0, 1, 2] if by_attribute else 0)

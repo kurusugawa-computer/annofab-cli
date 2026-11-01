@@ -10,7 +10,7 @@ import annofabapi
 import pandas
 import pytest
 from annofabapi.credentials import IdPass
-from annofabapi.models import JobStatus
+from annofabapi.models import JobStatus, ProjectJobType
 
 from annofabcli.common.enums import OutputFormat
 from annofabcli.task import list_all_with_statistics as command
@@ -149,20 +149,53 @@ def test_api_counts_without_zip_or_input_download_for_non_movie(command_context,
     service.wrapper.download_project_inputs_json.assert_not_called()
 
 
-def test_latest_updates_used_files_but_not_history_archive(command_context, tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    ("input_type", "source", "targets"),
+    [
+        ("movie", "zip", ["post_project_tasks_update", "post_project_inputs_update", "post_annotation_archive_update"]),
+        ("movie", "api", ["post_project_tasks_update", "post_project_inputs_update", "post_annotation_archive_update"]),
+        ("image", "zip", ["post_project_tasks_update", "post_annotation_archive_update"]),
+        ("image", "api", ["post_project_tasks_update"]),
+    ],
+)
+def test_latest_updates_used_files_but_not_history_archive(command_context, tmp_path, monkeypatch, input_type, source, targets):
     service, _, _ = command_context
     for name in ["post_project_tasks_update", "post_project_inputs_update", "post_annotation_archive_update"]:
         monkeypatch.setattr(service.api, name, Mock(return_value=({"job": {"job_id": "j"}}, None)))
-    monkeypatch.setattr(service.wrapper, "wait_until_job_finished", Mock(return_value=JobStatus.SUCCEEDED))
-    run_command(tmp_path, "--latest", "--annotation_count_source", "zip")
-    service.api.post_annotation_archive_update.assert_called_once()
-    service.api.post_project_inputs_update.assert_called_once()
+    service.api.get_project.return_value = ({"title": "test", "input_data_type": input_type}, None)
+
+    def wait_for_job(_project_id, *, job_type, **_kwargs):
+        if job_type == ProjectJobType.GEN_TASKS_LIST:
+            service.api.post_project_tasks_update.assert_called_once_with("p")
+            service.api.post_annotation_archive_update.assert_not_called()
+            service.api.post_project_inputs_update.assert_not_called()
+            service.wrapper.download_project_tasks_json.assert_not_called()
+        else:
+            for name in targets:
+                getattr(service.api, name).assert_called_once_with("p")
+            service.wrapper.download_annotation_zip.assert_not_called()
+            service.wrapper.download_project_inputs_json.assert_not_called()
+        return JobStatus.SUCCEEDED
+
+    monkeypatch.setattr(service.wrapper, "wait_until_job_finished", Mock(side_effect=wait_for_job))
+    rows = run_command(tmp_path, "--latest", "--annotation_count_source", source)
+    assert len(rows) == 4
+    for name in ["post_project_tasks_update", "post_project_inputs_update", "post_annotation_archive_update"]:
+        assert getattr(service.api, name).call_count == (1 if name in targets else 0)
+    assert service.wrapper.wait_until_job_finished.call_count == len(targets)
     service.wrapper.download_project_task_histories_json.assert_called_once()
 
 
-def test_empty_selection_skips_statistics_and_history_download(command_context, tmp_path):
+@pytest.mark.parametrize("latest", [False, True])
+def test_empty_selection_skips_statistics_and_history_download(command_context, tmp_path, monkeypatch, latest):
     service, _, _ = command_context
-    assert run_command(tmp_path, "--task_id", "unknown") == []
+    monkeypatch.setattr(service.api, "post_project_tasks_update", Mock(return_value=({"job": {"job_id": "j"}}, None)))
+    monkeypatch.setattr(service.api, "post_project_inputs_update", Mock())
+    monkeypatch.setattr(service.api, "post_annotation_archive_update", Mock())
+    monkeypatch.setattr(service.wrapper, "wait_until_job_finished", Mock(return_value=JobStatus.SUCCEEDED))
+    assert run_command(tmp_path, "--task_id", "unknown", *(["--latest"] if latest else [])) == []
+    service.api.post_project_inputs_update.assert_not_called()
+    service.api.post_annotation_archive_update.assert_not_called()
     service.wrapper.download_project_task_histories_json.assert_not_called()
     service.wrapper.download_annotation_zip.assert_not_called()
     service.api.get_annotation_list.assert_not_called()

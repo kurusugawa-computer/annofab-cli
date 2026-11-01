@@ -50,7 +50,7 @@ from annofabcli.common.cli import (
     CommandLine,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     AnnofabApiFacade,
@@ -846,7 +846,7 @@ class CountAnnotationAttributeFilled(CommandLine):
 
         return True
 
-    def main(self) -> None:
+    def main(self) -> None:  # noqa: PLR0915
         args = self.args
 
         if not self.validate(args):
@@ -874,6 +874,9 @@ class CountAnnotationAttributeFilled(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_process_annotation(temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
+            if is_latest and annotation_path is None and project_id is not None and (group_by == [INPUT_DATA_ID_GROUP] or with_task_metadata or needs_task_metadata(group_by)):
+                downloading_obj.update_download_files([project_id], [DownloadFileTarget.TASK, DownloadFileTarget.ANNOTATION])
+                is_latest = False
             # タスク全件ファイルは、フレーム番号またはタスクメタデータを参照するのに利用する
             if project_id is not None and (group_by == [INPUT_DATA_ID_GROUP] or with_task_metadata or needs_task_metadata(group_by)):
                 # group_byで条件を絞り込んでいる理由：

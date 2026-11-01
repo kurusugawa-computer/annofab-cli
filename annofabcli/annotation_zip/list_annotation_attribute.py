@@ -34,7 +34,7 @@ from annofabcli.common.cli import (
     CommandLine,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     AnnofabApiFacade,
@@ -272,6 +272,9 @@ class ListAnnotationAttribute(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print_annotation_attribute_list(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
+            if is_latest and args.with_task_metadata and annotation_path is None:
+                downloading_obj.update_download_files([project_id], [DownloadFileTarget.TASK, DownloadFileTarget.ANNOTATION])
+                is_latest = False
             if args.with_task_metadata:
                 task_json_path = downloading_obj.download_task_json_to_dir(project_id, temp_dir, is_latest=is_latest)
                 task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path)

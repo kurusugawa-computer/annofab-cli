@@ -10,6 +10,7 @@ import annofabapi
 import numpy
 import pytest
 import yaml
+from annofabapi.models import JobStatus
 from annofabapi.segmentation import write_binary_image
 from PIL import Image
 
@@ -358,6 +359,8 @@ def project_sources(tmp_path, monkeypatch):
     service = annofabapi.build("user", "password")
     monkeypatch.setattr(service.api, "get_project", Mock(return_value=({"title": "test"}, None)))
     monkeypatch.setattr(service.api, "get_my_member_in_project", Mock(return_value=({"member_role": "owner"}, None)))
+    monkeypatch.setattr(service.api, "post_annotation_archive_update", Mock(return_value=({"job": {"job_id": "job"}}, None)))
+    monkeypatch.setattr(service.wrapper, "wait_until_job_finished", Mock(return_value=JobStatus.SUCCEEDED))
     login = Mock(return_value=service)
     monkeypatch.setattr(diff_annotation, "build_annofabapi_resource_and_login", login)
 
@@ -376,7 +379,7 @@ def project_sources(tmp_path, monkeypatch):
 @pytest.mark.parametrize("latest", [False, True])
 @pytest.mark.parametrize("use_temp_dir", [False, True])
 def test_cli_project_sources_produce_diff_and_clean_up(project_sources, capsys, tmp_path, sources, task_id, latest, use_temp_dir):
-    left, right, login, downloader, _ = project_sources
+    left, right, login, downloader, service = project_sources
     arguments = ["annotation_zip", "diff", "--format", "json"]
     if latest:
         arguments.append("--latest")
@@ -393,7 +396,17 @@ def test_cli_project_sources_produce_diff_and_clean_up(project_sources, capsys, 
         arguments.extend(["--right_annotation", str(right)])
     else:
         arguments.extend(["--right_project_id", "left-project" if sources == "same_project" else "right-project"])
+    expected_projects = ["left-project", "right-project"] if sources == "both_projects" else ["right-project" if sources == "right_project" else "left-project"]
+
+    def wait_for_job(*_args, **_kwargs):
+        assert [call.args[0] for call in service.api.post_annotation_archive_update.call_args_list] == expected_projects
+        downloader.assert_not_called()
+        return JobStatus.SUCCEEDED
+
+    service.wrapper.wait_until_job_finished.side_effect = wait_for_job
     main(arguments)
+    assert service.api.post_annotation_archive_update.call_count == (len(expected_projects) if latest else 0)
+    assert service.wrapper.wait_until_job_finished.call_count == (len(expected_projects) if latest else 0)
     diff = json.loads(capsys.readouterr().out)
     assert diff["has_diff"] == (sources != "same_project" and task_id != "missing")
     if diff["has_diff"]:
@@ -401,7 +414,7 @@ def test_cli_project_sources_produce_diff_and_clean_up(project_sources, capsys, 
     login.assert_called_once()
     assert downloader.call_count == (2 if sources == "both_projects" else 1)
     for call in downloader.call_args_list:
-        assert call.kwargs["is_latest"] is latest
+        assert call.kwargs["is_latest"] is False
         if use_temp_dir:
             assert call.args[1] == temp_dir
             assert (temp_dir / f"{call.args[0]}.zip").is_file()

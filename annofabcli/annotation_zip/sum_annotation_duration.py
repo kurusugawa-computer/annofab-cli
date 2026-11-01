@@ -19,7 +19,7 @@ from annofabcli.annotation_zip.count_aggregation import is_summary_group, valida
 from annofabcli.annotation_zip.count_annotation import add_attribute_value_arguments, add_label_name_argument
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_json_from_args, get_list_from_args
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_annotation_with_task_query
@@ -226,7 +226,7 @@ def create_duration_dataframe(rows: Collection[dict[str, Any]], base_columns: Co
 class SumAnnotationDuration(CommandLine):
     """区間アノテーションの長さを出力するコマンド。"""
 
-    def run(self, *, by_attribute: bool) -> None:
+    def run(self, *, by_attribute: bool) -> None:  # noqa: PLR0915
         """入力を取得して集計結果を出力します。
 
         Args:
@@ -260,10 +260,15 @@ class SumAnnotationDuration(CommandLine):
             temp_dir = args.temp_dir if args.temp_dir is not None else Path(directory)
             downloading = DownloadingFile(self.service)
             annotation_path = args.annotation
+            if args.latest:
+                targets = [DownloadFileTarget.INPUT_DATA, DownloadFileTarget.TASK]
+                if annotation_path is None:
+                    targets.append(DownloadFileTarget.ANNOTATION)
+                downloading.update_download_files([args.project_id], targets)
             if annotation_path is None:
-                annotation_path = downloading.download_annotation_zip_to_dir(args.project_id, temp_dir, is_latest=args.latest)
-            input_path = downloading.download_input_data_json_to_dir(args.project_id, temp_dir, is_latest=args.latest)
-            task_path = downloading.download_task_json_to_dir(args.project_id, temp_dir, is_latest=args.latest)
+                annotation_path = downloading.download_annotation_zip_to_dir(args.project_id, temp_dir, is_latest=False)
+            input_path = downloading.download_input_data_json_to_dir(args.project_id, temp_dir, is_latest=False)
+            task_path = downloading.download_task_json_to_dir(args.project_id, temp_dir, is_latest=False)
             with input_path.open(encoding="utf-8") as file:
                 input_data_list = json.load(file)
             with task_path.open(encoding="utf-8") as file:

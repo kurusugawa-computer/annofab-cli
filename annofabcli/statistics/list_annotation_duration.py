@@ -33,7 +33,7 @@ from annofabcli.common.cli import (
     CommandLine,
     build_annofabapi_resource_and_login,
 )
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import (
     AnnofabApiFacade,
@@ -587,6 +587,9 @@ class ListAnnotationDuration(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print_annotation_duration(project_id: str, temp_dir: Path, *, is_latest: bool, annotation_path: Path | None) -> None:
+            if is_latest and annotation_path is None:
+                downloading_obj.update_download_files([project_id], [DownloadFileTarget.ANNOTATION, DownloadFileTarget.INPUT_DATA])
+                is_latest = False
             if annotation_path is None:
                 annotation_path = downloading_obj.download_annotation_zip_to_dir(
                     project_id,

@@ -9,7 +9,7 @@ from typing import Any
 import annofabapi.utils
 
 from annofabcli.common.dataclasses import WaitOptions
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.exceptions import DownloadingFileNotFoundError
 
 logger = logging.getLogger(__name__)
@@ -148,6 +148,12 @@ class VisualizationSourceFiles:
         downloading_obj = DownloadingFile(self.annofab_service)
 
         wait_options = WaitOptions(interval=60, max_tries=360)
+        if is_latest:
+            targets = [DownloadFileTarget.TASK, DownloadFileTarget.INPUT_DATA]
+            if should_download_annotation_zip:
+                targets.append(DownloadFileTarget.ANNOTATION)
+            downloading_obj.update_download_files([self.project_id], targets, wait_options=wait_options)
+            is_latest = False
 
         downloading_obj.download_task_json(self.project_id, dest_path=self.task_json_path, is_latest=is_latest, wait_options=wait_options)
 

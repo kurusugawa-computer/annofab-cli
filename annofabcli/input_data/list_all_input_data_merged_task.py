@@ -20,7 +20,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
     get_list_from_args,
 )
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, InputDataQuery, match_input_data_with_query
 from annofabcli.common.utils import print_csv
@@ -145,6 +145,9 @@ class ListInputDataMergedTask(CommandLine):
     def download_json_files(self, project_id: str, temp_dir: Path | None, *, is_latest: bool) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         """入力データJSONとタスクJSONをダウンロードして読み込む。"""
         downloading_obj = DownloadingFile(self.service)
+        if is_latest:
+            downloading_obj.update_download_files([project_id], [DownloadFileTarget.INPUT_DATA, DownloadFileTarget.TASK])
+            is_latest = False
 
         def _download_and_load(dir_path: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
             input_data_json_path = downloading_obj.download_input_data_json_to_dir(project_id, dir_path, is_latest=is_latest)

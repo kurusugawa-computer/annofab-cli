@@ -5,8 +5,10 @@ from unittest.mock import Mock
 import annofabapi
 import pandas
 import pytest
+from annofabapi.models import JobStatus
 
 from annofabcli.common.download import DownloadingFile
+from annofabcli.common.exceptions import UpdatedFileForDownloadingError
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import print_csv
 from annofabcli.input_data.list_all_input_data_merged_task import ListInputDataMergedTask, create_df_input_data_with_merged_task, create_parser
@@ -69,3 +71,47 @@ def test_main_filters_input_data_names(tmp_path: Path, monkeypatch: pytest.Monke
 
     actual = json.loads(output.read_text(encoding="utf-8"))
     assert [row["input_data_id"] for row in actual] == expected_ids
+
+
+@pytest.mark.parametrize("latest", [False, True])
+@pytest.mark.parametrize("use_temp_dir", [False, True])
+def test_download_json_files_requests_both_updates_before_waiting(tmp_path, latest, use_temp_dir):
+    service = Mock()
+    for method in [service.api.post_project_inputs_update, service.api.post_project_tasks_update]:
+        method.return_value = ({"job": {"job_id": "job"}}, None)
+
+    def wait_for_job(*_args, **_kwargs):
+        service.api.post_project_inputs_update.assert_called_once_with("p")
+        service.api.post_project_tasks_update.assert_called_once_with("p")
+        service.wrapper.download_project_inputs_json.assert_not_called()
+        service.wrapper.download_project_tasks_json.assert_not_called()
+        return JobStatus.SUCCEEDED
+
+    service.wrapper.wait_until_job_finished.side_effect = wait_for_job
+    inputs = [{"input_data_id": "input"}]
+    tasks = [{"task_id": "task", "input_data_id_list": ["input"]}]
+    service.wrapper.download_project_inputs_json.side_effect = lambda _p, dest: Path(dest).write_text(json.dumps(inputs), encoding="utf-8")
+    service.wrapper.download_project_tasks_json.side_effect = lambda _p, dest: Path(dest).write_text(json.dumps(tasks), encoding="utf-8")
+    args = create_parser().parse_args(["--project_id", "p"])
+    command = ListInputDataMergedTask(service, Mock(spec=AnnofabApiFacade), args)
+    assert command.download_json_files("p", tmp_path if use_temp_dir else None, is_latest=latest) == (inputs, tasks)
+    assert service.wrapper.wait_until_job_finished.call_count == (2 if latest else 0)
+    if not latest:
+        service.api.post_project_inputs_update.assert_not_called()
+        service.api.post_project_tasks_update.assert_not_called()
+    service.api.post_annotation_archive_update.assert_not_called()
+
+
+def test_failed_latest_update_waits_for_other_job_without_downloading(tmp_path):
+    service = Mock()
+    for method in [service.api.post_project_inputs_update, service.api.post_project_tasks_update]:
+        method.return_value = ({"job": {"job_id": "job"}}, None)
+    service.wrapper.wait_until_job_finished.side_effect = [JobStatus.FAILED, JobStatus.SUCCEEDED]
+    args = create_parser().parse_args(["--project_id", "p"])
+    command = ListInputDataMergedTask(service, Mock(spec=AnnofabApiFacade), args)
+    with pytest.raises(UpdatedFileForDownloadingError):
+        command.download_json_files("p", tmp_path, is_latest=True)
+    assert service.wrapper.wait_until_job_finished.call_count == 2
+    service.wrapper.download_project_inputs_json.assert_not_called()
+    service.wrapper.download_project_tasks_json.assert_not_called()
+    assert list(tmp_path.iterdir()) == []

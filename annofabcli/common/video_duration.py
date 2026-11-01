@@ -14,7 +14,7 @@ import pandas
 from annofabapi.models import InputData, InputDataType, ProjectMemberRole, Task
 
 from annofabcli.common.cli import ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade
@@ -154,14 +154,18 @@ class VideoDurationCommand(CommandLine):
         with tempfile.TemporaryDirectory() as temporary_dir:
             temp_dir = args.temp_dir if args.temp_dir is not None else Path(temporary_dir)
             downloading = DownloadingFile(self.service)
+            download_latest = args.latest
+            if download_latest and args.input_data_json_file is None and args.task_json_file is None:
+                downloading.update_download_files([args.project_id], [DownloadFileTarget.INPUT_DATA, DownloadFileTarget.TASK])
+                download_latest = False
             input_data_json = args.input_data_json_file
             if input_data_json is None:
-                input_data_json = downloading.download_input_data_json_to_dir(args.project_id, temp_dir, is_latest=args.latest)
+                input_data_json = downloading.download_input_data_json_to_dir(args.project_id, temp_dir, is_latest=download_latest)
             with input_data_json.open(encoding="utf-8") as file:
                 input_data_list = json.load(file)
             task_json = args.task_json_file
             if task_json is None:
-                task_json = downloading.download_task_json_to_dir(args.project_id, temp_dir, is_latest=args.latest)
+                task_json = downloading.download_task_json_to_dir(args.project_id, temp_dir, is_latest=download_latest)
             with task_json.open(encoding="utf-8") as file:
                 task_list = json.load(file)
         task_ids = get_list_from_args(args.task_id) if args.task_id is not None else None

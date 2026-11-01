@@ -25,7 +25,7 @@ from annofabcli.annotation_zip.task_metadata import (
 )
 from annofabcli.common.annofab.annotation_zip import lazy_parse_simple_annotation_by_input_data
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, build_annofabapi_resource_and_login, get_list_from_args
-from annofabcli.common.download import DownloadingFile
+from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.enums import OutputFormat
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_annotation_with_task_query
 from annofabcli.common.utils import print_csv, print_json
@@ -288,6 +288,9 @@ class ListAnnotation3DSegment(CommandLine):
         downloading_obj = DownloadingFile(self.service)
 
         def download_and_print(project_id: str, temp_dir: Path, *, is_latest: bool) -> None:
+            if is_latest and args.with_task_metadata:
+                downloading_obj.update_download_files([project_id], [DownloadFileTarget.TASK, DownloadFileTarget.ANNOTATION])
+                is_latest = False
             if args.with_task_metadata:
                 task_json_path = downloading_obj.download_task_json_to_dir(project_id, temp_dir, is_latest=is_latest)
                 task_metadata_by_task_id = get_task_metadata_by_task_id(task_json_path)
