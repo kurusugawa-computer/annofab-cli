@@ -82,4 +82,4 @@ Annofabの認証情報を設定する方法は以下の3つです。優先順位
 
 .. code-block::
 
-    $ annofabcli task list --endpoint_url http://localhost:8080
+    $ annofabcli task list --project_id prj1 --endpoint_url http://localhost:8080

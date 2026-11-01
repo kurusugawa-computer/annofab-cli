@@ -51,7 +51,7 @@ Examples
     .. code-block::
         
         $ annofabcli input_data list --project_id prj1 --input_data_id input1 --format json |
-            jq '[.[] | {input_data,metadata}]'
+            jq '[.[] | {input_data_id,metadata}]'
         [
             {
                 "input_data_id": "input1",

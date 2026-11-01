@@ -136,7 +136,7 @@ Examples
 .. code-block::
 
     $ annofabcli task reject --project_id prj1 --task_id file://task_id.txt \
-     --task_query '{"phase":"acceptance", "status:"not_started"}' 
+     --task_query '{"phase":"acceptance", "status":"not_started"}'
 
 
 
