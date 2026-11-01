@@ -56,7 +56,7 @@ Examples
 .. code-block::
 
     $ annofabcli task change_operator --project_id prj1 --task_id file://task_id.txt \
-     --task_query '{"phase":"acceptance", "status:"not_started"}' --not_assign
+     --task_query '{"phase":"acceptance", "status":"not_started"}' --not_assign
 
 
 保留中状態のタスクの担当者を変更する

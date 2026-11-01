@@ -8,12 +8,16 @@ Description
 
 タスクの状態は以下の6つのカテゴリに分類されます。
 
-* ``never_worked.unassigned``: 一度も作業していない状態かつ担当者未割り当て
-* ``never_worked.assigned``: 一度も作業していない状態かつ担当者割り当て済み
-* ``worked.not_rejected``: 作業中または休憩中で、まだ差し戻されていない（次のフェーズに進んでいない）
-* ``worked.rejected``: 作業中または休憩中で、差し戻された（次のフェーズに進んだ）
+* ``never_worked.unassigned``: 下記の「作業していない」の条件に一致し、担当者未割り当て
+* ``never_worked.assigned``: 下記の「作業していない」の条件に一致し、担当者割り当て済み
+* ``worked.not_rejected``: 作業中・休憩中で現在のフェーズが差し戻しによる再実行ではないタスク、または「作業していない」の条件に一致しない未着手タスク
+* ``worked.rejected``: 作業中・休憩中で、現在のフェーズが差し戻しによる再実行となっているタスク
 * ``on_hold``: 保留中
 * ``complete``: 完了
+
+多段検査では、検査ステージ2以降からの差し戻しを、上記の分類の差し戻し判定に含めません。
+これらの差し戻ししかないタスクは、差し戻しのないタスクと同じ条件で分類します。
+たとえば、未着手で現在のフェーズの累計作業時間が閾値以下なら、 ``never_worked.*`` に分類します。
 
 
 Examples
@@ -86,15 +90,22 @@ Examples
 作業時間の閾値を指定
 --------------------------
 
-``--not_worked_threshold_second`` を指定すると、指定した秒数以下の作業時間のタスクを「作業していない」とみなします。
-デフォルトは0秒です。
+「作業していない」とみなすのは、以下の条件をすべて満たすタスクです。
+
+* 未着手状態である
+* 現在のフェーズが差し戻しによる再実行ではない
+* 現在のフェーズの累計作業時間が ``--not_worked_threshold_second`` に指定した秒数以下である
+
+閾値のデフォルトは0秒です。作業中・休憩中・保留中・完了状態のタスクには、この閾値を適用しません。
 
 .. code-block::
 
     $ annofabcli task_count list_by_phase --project_id prj1 --not_worked_threshold_second 60 --output out.csv
 
 
-この例では、60秒以下の作業時間のタスクは ``never_worked.assigned`` または ``never_worked.unassigned`` に分類されます。
+この例では、上記の状態・フェーズの条件を満たし、現在のフェーズの累計作業時間が60秒以下のタスクを
+``never_worked.assigned`` または ``never_worked.unassigned`` に分類します。
+上記の差し戻し判定で再実行とみなす未着手タスクは、作業時間にかかわらず ``worked.not_rejected`` に分類します。
 
 
 
