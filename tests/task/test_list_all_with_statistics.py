@@ -208,7 +208,7 @@ def test_csv_fixed_columns_metadata_and_nullable_counts(tmp_path):
     command.output_tasks(rows, path, OutputFormat.CSV)
     df = pandas.read_csv(path)
     assert list(df.columns) == [*command.get_output_columns(), "metadata.category", "metadata.priority"]
-    assert len(command.get_output_columns()) == 47
+    assert len(command.get_output_columns()) == 50
     assert len(df) == 4
     for index, row in enumerate(rows):
         for phase in ["annotation", "inspection", "acceptance"]:

@@ -51,6 +51,9 @@
       "user1": 0.5
     },
     "inspection_worktime_hour_by_user": {},
-    "acceptance_worktime_hour_by_user": {}
+    "acceptance_worktime_hour_by_user": {},
+    "annotation_worktime_hour_unknown_user": 0.0,
+    "inspection_worktime_hour_unknown_user": 0.0,
+    "acceptance_worktime_hour_unknown_user": 0.0
   }
 ]

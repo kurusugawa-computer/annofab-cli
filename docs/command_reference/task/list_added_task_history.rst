@@ -157,18 +157,21 @@ JSON出力
         "first_annotation_username": "Bob",
         "annotation_worktime_hour": 0.5879452777777777,
         "annotation_worktime_hour_by_user": {"bob": 0.5879452777777777},
+        "annotation_worktime_hour_unknown_user": 0.0,
         "first_inspection_started_datetime": "2022-10-25T09:44:00.589+09:00",
         "first_inspection_worktime_hour": 0.08355916666666666,
         "first_inspection_user_id": "chris",
         "first_inspection_username": "Chris",
         "inspection_worktime_hour": 0.1110011111111111,
         "inspection_worktime_hour_by_user": {"chris": 0.1110011111111111},
+        "inspection_worktime_hour_unknown_user": 0.0,
         "first_acceptance_started_datetime": "2022-10-25T15:04:24.212+09:00",
         "first_acceptance_worktime_hour": 0.16520972222222222,
         "first_acceptance_user_id": "alice",
         "first_acceptance_username": "Alice",
         "acceptance_worktime_hour": 0.16520972222222222,
         "acceptance_worktime_hour_by_user": {"alice": 0.16520972222222222},
+        "acceptance_worktime_hour_unknown_user": 0.0,
         "first_inspection_reached_datetime": "2022-10-25T12:00:00.000+09:00",
         "first_acceptance_reached_datetime": "2022-10-24T15:14:18.967+09:00",
         "first_acceptance_completed_datetime": "2022-10-25T15:14:18.967+09:00",
@@ -224,7 +227,17 @@ JSON出力
 たとえば ``{"alice": 3.0, "bob": 6.0}`` は、Aliceが3時間、Bobが6時間作業したことを表します。
 担当者交代や差し戻しを含めて、同じフェーズ・同じuser_idの作業時間を合算します。
 CSVではJSON文字列、JSONではオブジェクトとして出力します。作業実績がないフェーズは ``{}`` です。
-作業時間が0の履歴は対象外です。正の作業時間がある履歴のuser_idを取得できない場合、出力せずに異常終了します。
+作業時間が0の履歴は対象外です。
+正の作業時間がある履歴のuser_idを取得できない場合、処理を継続し、次の列に担当者不明の作業時間[hour]を出力します。
+
+* ``annotation_worktime_hour_unknown_user`` : 担当者不明の教師付作業時間
+* ``inspection_worktime_hour_unknown_user`` : 担当者不明の検査作業時間
+* ``acceptance_worktime_hour_unknown_user`` : 担当者不明の受入作業時間
+
+account_idが未設定の場合も、account_idからユーザーを特定できない場合も対象です。
+担当者不明の作業時間がない場合は ``0.0`` です。1ミリ秒などの微小な作業時間も省略しません。
+各フェーズの合計作業時間は、ユーザー別作業時間の合計と担当者不明の作業時間の和になります。
+担当者不明の作業時間がある場合は警告を出力します。
 
 
 ユーザー情報
@@ -254,6 +267,7 @@ CSVではJSON文字列、JSONではオブジェクトとして出力します。
 * ``since_{YYYY-MM-DD}.inspection_worktime_hour`` : 指定日以降の検査フェーズの作業時間
 * ``since_{YYYY-MM-DD}.acceptance_worktime_hour`` : 指定日以降の受入フェーズの作業時間
 * ``since_{YYYY-MM-DD}.annotation_worktime_hour_by_user`` : 指定日以降のuser_idごとの教師付作業時間[hour]
+* ``since_{YYYY-MM-DD}.annotation_worktime_hour_unknown_user`` : 指定日以降の担当者不明の教師付作業時間[hour]
 * ``since_{YYYY-MM-DD}.first_annotation_user_id`` : 指定日以降に最初に教師付フェーズを担当したユーザのuser_id
 * ``since_{YYYY-MM-DD}.first_annotation_username`` : 指定日以降に最初に教師付フェーズを担当したユーザの名前
 * ``since_{YYYY-MM-DD}.first_annotation_started_datetime`` : 指定日以降に最初に教師付フェーズを着手した日時

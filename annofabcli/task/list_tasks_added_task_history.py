@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -24,8 +25,14 @@ from annofabcli.task.list_tasks import ListTasksMain
 logger = logging.getLogger(__name__)
 
 
-class TaskHistoryUserNotFoundError(ValueError):
-    """正の作業時間があるタスク履歴のユーザーを特定できない場合のエラー。"""
+@dataclass
+class WorktimeByUser:
+    """ユーザー別作業時間と、担当者不明の作業時間。"""
+
+    by_user: dict[str, float] = field(default_factory=dict)
+    """user_idごとの作業時間[hour]。"""
+    unknown_user: float = 0.0
+    """ユーザーを特定できない作業時間[hour]。"""
 
 
 def get_post_rejection_annotation_worktime_hour(task_histories: list[TaskHistory]) -> float:
@@ -318,6 +325,14 @@ class AddingAdditionalInfoToTask:
         self.service = service
         self.project_id = project_id
         self.visualize = AddProps(self.service, project_id)
+        self.unknown_user_task_ids: set[str] = set()
+        """担当者不明の作業時間があるタスクID。"""
+        self.unknown_account_history_count = 0
+        """account_idがない正の作業時間の履歴数。"""
+        self.unresolved_user_history_count = 0
+        """account_idからユーザーを特定できない正の作業時間の履歴数。"""
+        self.unknown_user_worktime_hour = 0.0
+        """担当者不明の合計作業時間[hour]。"""
 
     def _add_task_history_info(self, task: Task, task_history: TaskHistory | None, column_prefix: str) -> Task:
         """
@@ -363,7 +378,7 @@ class AddingAdditionalInfoToTask:
 
         return task
 
-    def calculate_worktime_hour_by_user(self, task_histories: list[TaskHistory], phase: TaskPhase, *, start_date: str | None = None) -> dict[str, float]:
+    def calculate_worktime_hour_by_user(self, task_histories: list[TaskHistory], phase: TaskPhase, *, start_date: str | None = None) -> WorktimeByUser:
         """フェーズ別の作業時間をuser_idごとに合算する。
 
         Args:
@@ -372,9 +387,9 @@ class AddingAdditionalInfoToTask:
             start_date: 集計開始日。指定時はstarted_datetimeの日付で絞り込む。
 
         Returns:
-            user_idをキー、作業時間[hour]を値とする辞書。
+            ユーザー別作業時間と担当者不明の作業時間。
         """
-        result: dict[str, float] = {}
+        result = WorktimeByUser()
         for history in task_histories:
             if history["phase"] != phase.value:
                 continue
@@ -386,10 +401,35 @@ class AddingAdditionalInfoToTask:
             account_id = history["account_id"]
             member = self.visualize.get_project_member_from_account_id(account_id) if account_id is not None else None
             if member is None or not member["user_id"]:
-                raise TaskHistoryUserNotFoundError(f"task_id='{history['task_id']}', account_id='{account_id}' :: 正の作業時間があるタスク履歴のuser_idを取得できません。")
+                result.unknown_user += worktime_hour
+                if start_date is None:
+                    self.unknown_user_task_ids.add(history["task_id"])
+                    self.unknown_user_worktime_hour += worktime_hour
+                    if account_id is None:
+                        self.unknown_account_history_count += 1
+                    else:
+                        self.unresolved_user_history_count += 1
+                continue
             user_id = member["user_id"]
-            result[user_id] = result.get(user_id, 0.0) + worktime_hour
+            result.by_user[user_id] = result.by_user.get(user_id, 0.0) + worktime_hour
         return result
+
+    def warn_unknown_worktime_users(self) -> None:
+        """担当者不明の作業時間の集計結果を警告する。
+
+        Args:
+            なし。
+
+        Returns:
+            なし。
+        """
+        if self.unknown_user_task_ids:
+            logger.warning(
+                f"担当者不明の作業時間があります。対象タスク数={len(self.unknown_user_task_ids)}, "
+                f"account_idなしの履歴数={self.unknown_account_history_count}, "
+                f"ユーザーを特定できないaccount_idの履歴数={self.unresolved_user_history_count}, "
+                f"合計作業時間[hour]={self.unknown_user_worktime_hour}"
+            )
 
     def add_additional_info_to_task(self, task: dict[str, Any]) -> None:
         """タスクの付加的情報を、タスクに追加する。
@@ -434,7 +474,9 @@ class AddingAdditionalInfoToTask:
         for phase in TaskPhase:
             # タスク履歴から取得した作業時間を設定
             task[f"{phase.value}_worktime_hour"] = calculate_total_worktime_in_phase(task_histories, phase)
-            task[f"{phase.value}_worktime_hour_by_user"] = self.calculate_worktime_hour_by_user(task_histories, phase)
+            worktime_by_user = self.calculate_worktime_hour_by_user(task_histories, phase)
+            task[f"{phase.value}_worktime_hour_by_user"] = worktime_by_user.by_user
+            task[f"{phase.value}_worktime_hour_unknown_user"] = worktime_by_user.unknown_user
             first_task_history = get_first_task_history(task_histories, phase)
             self._add_task_history_info(task, first_task_history, column_prefix=f"first_{phase.value}")
 
@@ -458,7 +500,9 @@ class AddingAdditionalInfoToTask:
             for start_date in start_date_list:
                 for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]:
                     task[f"since_{start_date}.{phase.value}_worktime_hour"] = calculate_worktime_since_date(task_histories, phase, start_date)
-                    task[f"since_{start_date}.{phase.value}_worktime_hour_by_user"] = self.calculate_worktime_hour_by_user(task_histories, phase, start_date=start_date)
+                    worktime_by_user = self.calculate_worktime_hour_by_user(task_histories, phase, start_date=start_date)
+                    task[f"since_{start_date}.{phase.value}_worktime_hour_by_user"] = worktime_by_user.by_user
+                    task[f"since_{start_date}.{phase.value}_worktime_hour_unknown_user"] = worktime_by_user.unknown_user
                     first_history = get_first_task_history_since_date(task_histories, phase, start_date)
                     self._add_task_history_info(task, first_history, column_prefix=f"since_{start_date}.first_{phase.value}")
 
@@ -486,11 +530,10 @@ class ListTasksAddedTaskHistoryMain:
                 task_histories, _ = self.service.api.get_task_histories(self.project_id, task_id)
                 # タスク履歴から取得した情報をtaskに設定する
                 obj.add_task_history_additional_info_to_task(task, task_histories, start_date_list=start_date_list)
-            except TaskHistoryUserNotFoundError:
-                raise
             except Exception:
                 logger.warning(f"task_id='{task_id}' :: タスク履歴に関する情報を取得するのに失敗しました。", exc_info=True)
 
+        obj.warn_unknown_worktime_users()
         return task_list
 
 
@@ -527,6 +570,9 @@ class TasksAddedTaskHistoryOutput:
             "annotation_worktime_hour_by_user",
             "inspection_worktime_hour_by_user",
             "acceptance_worktime_hour_by_user",
+            "annotation_worktime_hour_unknown_user",
+            "inspection_worktime_hour_unknown_user",
+            "acceptance_worktime_hour_unknown_user",
             # 差し戻し回数
             "number_of_rejections_by_inspection",
             "number_of_rejections_by_acceptance",
@@ -560,7 +606,9 @@ class TasksAddedTaskHistoryOutput:
         columns = []
         for start_date in self.start_date_list:
             for phase in [TaskPhase.ANNOTATION, TaskPhase.INSPECTION, TaskPhase.ACCEPTANCE]:
-                columns.extend([f"since_{start_date}.{phase.value}_worktime_hour", f"since_{start_date}.{phase.value}_worktime_hour_by_user"])
+                columns.extend(
+                    [f"since_{start_date}.{phase.value}_worktime_hour", f"since_{start_date}.{phase.value}_worktime_hour_by_user", f"since_{start_date}.{phase.value}_worktime_hour_unknown_user"]
+                )
                 columns.extend(f"since_{start_date}.first_{phase.value}_{info}" for info in ["user_id", "username", "started_datetime", "worktime_hour"])
         return columns
 
@@ -651,9 +699,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         metavar="YYYY-MM-DD",
-        help="指定日以降の作業時間、ユーザー別の作業時間、最初の担当者情報を、追加カラムとして出力します。"
+        help="指定日以降の作業時間、ユーザー別の作業時間、担当者不明の作業時間、最初の担当者情報を、追加カラムとして出力します。"
         "日付はYYYY-MM-DD形式で複数指定できます。タスク履歴のstarted_datetimeを基準に集計します。"
-        "追加カラム名は ``since_{日付}.{フェーズ}_worktime_hour`` 、 ``since_{日付}.{フェーズ}_worktime_hour_by_user`` および"
+        "追加カラム名は ``since_{日付}.{フェーズ}_worktime_hour`` 、 ``since_{日付}.{フェーズ}_worktime_hour_by_user`` 、"
+        " ``since_{日付}.{フェーズ}_worktime_hour_unknown_user`` および"
         " ``since_{日付}.first_{フェーズ}_{user_id,username,started_datetime,worktime_hour}`` です。",
     )
 

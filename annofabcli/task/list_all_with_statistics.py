@@ -36,7 +36,7 @@ def get_output_columns() -> list[str]:
         なし。
 
     Returns:
-        入力データ数の直後に生産量3列を追加した、47列の一覧。
+        入力データ数の直後に生産量3列を追加した固定列の一覧。
     """
     columns = TasksAddedTaskHistoryOutput._get_output_target_columns()  # noqa: SLF001
     index = columns.index("input_data_count") + 1
