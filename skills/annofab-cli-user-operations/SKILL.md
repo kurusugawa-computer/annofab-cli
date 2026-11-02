@@ -19,6 +19,9 @@ $ pip install annofabcli
 - `--help`オプションのヘルプだけでは情報が不足している場合は、[ドキュメントのコマンドリファレンス](https://annofab-cli.readthedocs.io/ja/latest/command_reference/index.html)を参照してください。
 - バージョンによって動作が異なる可能性がある場合は、`annofabcli --version`でインストール済みのバージョンを確認してください。
 
+## コマンドの実行方法
+- コマンドを提示・実行するときは、省略形ではなく長いオプション名を使用してください。たとえば`-p`ではなく`--project_id`を使用してください。
+
 ### 参考サイト
 * [GitHubリポジトリ](https://github.com/kurusugawa-computer/annofab-cli)
 * [Annofabのマニュアル](https://annofab.readme.io/docs/)
