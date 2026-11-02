@@ -57,6 +57,7 @@ class ListAllTasksAddedTaskHistoryMain:
                 continue
             obj.add_task_history_additional_info_to_task(task, task_histories, start_date_list=start_date_list)
 
+        obj.warn_unknown_worktime_users()
         return task_list
 
     def load_task_list(self, temp_dir: Path | None, *, is_latest: bool) -> list[dict[str, Any]]:
@@ -192,9 +193,10 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         nargs="+",
         metavar="YYYY-MM-DD",
-        help="指定日以降の作業時間、ユーザー別の作業時間、最初の担当者情報を、追加カラムとして出力します。"
+        help="指定日以降の作業時間、ユーザー別の作業時間、担当者不明の作業時間、最初の担当者情報を、追加カラムとして出力します。"
         "日付はYYYY-MM-DD形式で複数指定できます。タスク履歴のstarted_datetimeを基準に集計します。"
-        "追加カラム名は ``since_{日付}.{フェーズ}_worktime_hour`` 、 ``since_{日付}.{フェーズ}_worktime_hour_by_user`` および"
+        "追加カラム名は ``since_{日付}.{フェーズ}_worktime_hour`` 、 ``since_{日付}.{フェーズ}_worktime_hour_by_user`` 、"
+        " ``since_{日付}.{フェーズ}_worktime_hour_unknown_user`` および"
         " ``since_{日付}.first_{フェーズ}_{user_id,username,started_datetime,worktime_hour}`` です。",
     )
 

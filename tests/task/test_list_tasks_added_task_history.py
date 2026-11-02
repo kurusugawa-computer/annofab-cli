@@ -14,7 +14,6 @@ from annofabcli.task.list_all_tasks_added_task_history import ListAllTasksAddedT
 from annofabcli.task.list_tasks_added_task_history import (
     AddingAdditionalInfoToTask,
     ListTasksAddedTaskHistoryMain,
-    TaskHistoryUserNotFoundError,
     TasksAddedTaskHistoryOutput,
     get_completed_datetime,
     get_first_acceptance_completed_datetime,
@@ -711,27 +710,55 @@ def test_worktime_by_user_includes_reassigned_and_returning_users(worktime_servi
     assert task["since_2026-10-03.annotation_worktime_hour_by_user"] == {}
     for prefix in ["", "since_2026-10-01.", "since_2026-10-03."]:
         for phase in TaskPhase:
+            assert task[f"{prefix}{phase.value}_worktime_hour_unknown_user"] == 0.0
             assert sum(task[f"{prefix}{phase.value}_worktime_hour_by_user"].values()) == pytest.approx(task[f"{prefix}{phase.value}_worktime_hour"])
 
 
-@pytest.mark.parametrize("account_id", [None, "missing-account"])
+@pytest.mark.parametrize("account_id", [None, "missing-account", "empty-user"])
 @pytest.mark.parametrize("command", ["list", "list_all"])
-def test_unknown_worktime_user_aborts_command(worktime_service, worktime_histories, account_id, command):
+def test_unknown_worktime_user_preserves_time_and_continues(worktime_service, worktime_histories, account_id, command, caplog):
+    worktime_service.wrapper.get_all_project_members.return_value.append({"account_id": "empty-user", "user_id": "", "username": ""})
     task = deepcopy(task_created_immediately.task)
-    histories = [worktime_histories[0], {**worktime_histories[1], "account_id": account_id}]
-    worktime_service.wrapper.get_all_tasks.return_value = [task]
-    worktime_service.api.get_task_histories.return_value = (histories, None)
-    with pytest.raises(TaskHistoryUserNotFoundError):
-        if command == "list":
-            ListTasksAddedTaskHistoryMain(worktime_service, "project1").main(task_query=None, task_id_list=None)
-        else:
-            ListAllTasksAddedTaskHistoryMain(worktime_service, "project1").get_detail_task_list([task], {task["task_id"]: histories})
+    next_task = {**deepcopy(task), "task_id": "next-task"}
+    histories = [
+        worktime_histories[0],
+        worktime_histories[1],
+        {**worktime_histories[1], "account_id": account_id, "accumulated_labor_time_milliseconds": "PT0.001S"},
+        {**worktime_histories[3], "account_id": account_id},
+        {**worktime_histories[3], "account_id": account_id, "accumulated_labor_time_milliseconds": "PT0S"},
+        {**worktime_histories[3], "account_id": account_id, "started_datetime": None, "accumulated_labor_time_milliseconds": "PT1H"},
+    ]
+    worktime_service.wrapper.get_all_tasks.return_value = [task, next_task]
+    worktime_service.api.get_task_histories.side_effect = [(histories, None), ([worktime_histories[0]], None)]
+    dates = ["2026-10-01", "2026-10-03"]
+    if command == "list":
+        tasks = ListTasksAddedTaskHistoryMain(worktime_service, "project1").main(task_query=None, task_id_list=None, start_date_list=dates)
+    else:
+        tasks = ListAllTasksAddedTaskHistoryMain(worktime_service, "project1").get_detail_task_list(
+            [task, next_task], {task["task_id"]: histories, next_task["task_id"]: [worktime_histories[0]]}, start_date_list=dates
+        )
+    assert len(tasks) == 2
+    assert task["annotation_worktime_hour_by_user"] == {"alice": 1.0}
+    assert task["annotation_worktime_hour_unknown_user"] == pytest.approx(7 + 0.001 / 3600)
+    assert task["since_2026-10-01.annotation_worktime_hour_by_user"] == {}
+    assert task["since_2026-10-01.annotation_worktime_hour_unknown_user"] == 6.0
+    assert task["since_2026-10-03.annotation_worktime_hour_unknown_user"] == 0.0
+    for prefix in ["", "since_2026-10-01.", "since_2026-10-03."]:
+        for phase in TaskPhase:
+            assert sum(task[f"{prefix}{phase.value}_worktime_hour_by_user"].values()) + task[f"{prefix}{phase.value}_worktime_hour_unknown_user"] == pytest.approx(
+                task[f"{prefix}{phase.value}_worktime_hour"]
+            )
+    warnings = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert len(warnings) == 1
+    assert "対象タスク数=1" in warnings[0].message
+    assert ("account_idなしの履歴数=3" if account_id is None else "ユーザーを特定できないaccount_idの履歴数=3") in warnings[0].message
 
 
 @pytest.mark.parametrize("output_format", [OutputFormat.CSV, OutputFormat.JSON, OutputFormat.PRETTY_JSON])
 def test_worktime_by_user_output_preserves_json_and_metadata(tmp_path, worktime_service, worktime_histories, output_format):
     task = deepcopy(complete_task.task)
     task["metadata"] = {"category": "sample"}
+    worktime_histories.append({**worktime_histories[1], "account_id": None, "accumulated_labor_time_milliseconds": "PT0.001S"})
     AddingAdditionalInfoToTask(worktime_service, "project1").add_task_history_additional_info_to_task(task, worktime_histories, start_date_list=["2026-10-01"])
     original = deepcopy(task)
     output = tmp_path / "output"
@@ -743,6 +770,19 @@ def test_worktime_by_user_output_preserves_json_and_metadata(tmp_path, worktime_
             if key.endswith("_worktime_hour_by_user"):
                 assert json.loads(record[key]) == value
         assert "annotation_worktime_hour_by_user.alice" not in record
+        for key, value in task.items():
+            if key.endswith("_worktime_hour_unknown_user"):
+                assert record[key] == pytest.approx(value)
     else:
         assert json.loads(output.read_text())[0] == original
     assert task == original
+
+
+def test_empty_csv_has_unknown_worktime_columns(tmp_path):
+    output = tmp_path / "empty.csv"
+    TasksAddedTaskHistoryOutput([], start_date_list=["2026-10-01"]).output(output, OutputFormat.CSV)
+    df = pandas.read_csv(output)
+    assert df.empty
+    for prefix in ["", "since_2026-10-01."]:
+        for phase in TaskPhase:
+            assert f"{prefix}{phase.value}_worktime_hour_unknown_user" in df.columns
