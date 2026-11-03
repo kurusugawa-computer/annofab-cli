@@ -1,15 +1,24 @@
 from __future__ import annotations
 
+import argparse
+import json
 import logging
+from contextlib import nullcontext
+from pathlib import Path
+from threading import Barrier
 from unittest.mock import Mock
 
 import pytest
 
 from annofabcli.annotation.change_annotation_attributes_per_annotation import (
     ChangeAnnotationAttributesPerAnnotationMain,
+    ChangeAnnotationAttributesTaskResult,
+    ChangeAttributesPerAnnotation,
     TargetAnnotation,
     filter_annotation_items_by_task_ids,
 )
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
+from annofabcli.common.exceptions import AnnofabCliException
 
 
 def test_filter_annotation_items_by_task_ids() -> None:
@@ -29,7 +38,7 @@ def test_change_annotation_attributes_logs_each_task_progress(caplog: pytest.Log
     service = Mock()
     service.api.get_annotation_specs.return_value = ({}, None)
     main_obj = ChangeAnnotationAttributesPerAnnotationMain(service, project_id="project1", include_complete_task=False, include_on_hold_task=False, all_yes=True)
-    monkeypatch.setattr(main_obj, "change_annotation_attributes_for_task", Mock(return_value=(True, 1, 0)))
+    monkeypatch.setattr(main_obj, "change_annotation_attributes_for_task", Mock(return_value=ChangeAnnotationAttributesTaskResult(changed=True, success=1, failed=0)))
     annotation_list = [TargetAnnotation(task_id=f"task_{index:03d}", input_data_id="input1", annotation_id="annotation1", attributes={}) for index in range(3)]
 
     with caplog.at_level(logging.INFO):
@@ -88,9 +97,103 @@ def test_change_annotation_attributes_for_task_respects_task_status(status: str,
 
     actual = main_obj.change_annotation_attributes_for_task("task1", {"input1": [target]})
 
-    assert actual == (expected_changed, int(expected_changed), int(not expected_changed))
+    assert actual == ChangeAnnotationAttributesTaskResult(changed=expected_changed, success=int(expected_changed), failed=int(not expected_changed))
     if expected_changed:
         assert service.api.batch_update_annotations.call_args.kwargs["request_body"][0]["data"]["annotation_id"] == "annotation1"
     else:
         service.api.get_editor_annotations_in_bulk.assert_not_called()
         service.api.batch_update_annotations.assert_not_called()
+
+
+@pytest.mark.parametrize("failure", ["none", "get_task", "update", "backup", "all_updates"])
+@pytest.mark.parametrize("parallelism", [None, 2])
+def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path, caplog: pytest.LogCaptureFixture, monkeypatch: pytest.MonkeyPatch, parallelism: int | None, failure: str) -> None:
+    service = Mock()
+    barrier = Barrier(2)
+    updates: list[tuple[str, str]] = []
+    original_write_text = Path.write_text
+
+    def write_text(path: Path, *args, **kwargs):
+        if failure == "backup" and path.parent.name == "task1" and path.name == "input1.json":
+            raise OSError("backup failure")
+        return original_write_text(path, *args, **kwargs)
+
+    if failure == "backup":
+        monkeypatch.setattr(Path, "write_text", write_text)
+
+    def get_task(_project_id, task_id):
+        if failure == "get_task" and task_id == "task1":
+            raise RuntimeError("task API failure")
+        if failure != "get_task" and parallelism is not None and task_id in {"task1", "task2"}:
+            barrier.wait(timeout=10)
+        return {"task_id": task_id, "status": "complete" if task_id == "complete" else "not_started", "account_id": None}
+
+    def get_annotations(project_id, task_id, *, query_params):
+        return {
+            "success": [
+                {
+                    "project_id": project_id,
+                    "task_id": task_id,
+                    "input_data_id": input_id,
+                    "updated_datetime": "2026-01-01T00:00:00Z",
+                    "format_version": "2.0.0",
+                    "details": [{"annotation_id": "annotation1", "label_id": "label_car", "additional_data_list": [], "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 0, "end": 1}}}],
+                }
+                for input_id in query_params["input_data_id"].split(",")
+            ],
+            "failure": [],
+        }, None
+
+    def update(_project_id, *_args, request_body, **_kwargs):
+        annotation = request_body[0]["data"]
+        task_id, input_id = annotation["task_id"], annotation["input_data_id"]
+        if failure == "all_updates" or (failure == "update" and (task_id, input_id) == ("task1", "input1")):
+            raise RuntimeError("update API failure")
+        backup = json.loads((tmp_path / task_id / f"{input_id}.json").read_text())
+        assert backup["input_data_id"] == input_id
+        assert request_body[0]["data"]["additional_data_list"] == []
+        updates.append((task_id, input_id))
+        return {}, None
+
+    service.wrapper.get_task_or_none.side_effect = get_task
+    service.api.get_editor_annotations_in_bulk.side_effect = get_annotations
+    service.api.batch_update_annotations.side_effect = update
+    service.api.get_annotation_specs.return_value = ({"additionals": []}, None)
+    main_obj = ChangeAnnotationAttributesPerAnnotationMain(service, project_id="project1", include_complete_task=False, include_on_hold_task=False, all_yes=True, backup_dir=tmp_path)
+    items = [
+        TargetAnnotation(task_id=task_id, input_data_id=input_id, annotation_id="annotation1", attributes={})
+        for task_id, input_id in [("task1", "input1"), ("task1", "input2"), ("task2", "input1"), ("complete", "input1")]
+    ]
+
+    expected_error = failure != "none"
+    with caplog.at_level(logging.INFO), pytest.raises(AnnofabCliException) if expected_error else nullcontext():
+        main_obj.change_annotation_attributes(items, parallelism=parallelism)
+
+    if failure == "get_task":
+        expected_updates = [("task2", "input1")]
+    elif failure in {"update", "backup"}:
+        expected_updates = [("task1", "input2"), ("task2", "input1")]
+    elif failure == "all_updates":
+        expected_updates = []
+    else:
+        expected_updates = [("task1", "input1"), ("task1", "input2"), ("task2", "input1")]
+    assert sorted(updates) == expected_updates
+    assert [input_id for task_id, input_id in updates if task_id == "task1"] == [input_id for task_id, input_id in expected_updates if task_id == "task1"]
+    assert not (tmp_path / "complete").exists()
+    assert "タスクが完了状態" in caplog.text
+    assert f"{len(expected_updates)}/4" in caplog.messages[-1]
+    assert f"{4 - len(expected_updates)} 件のアノテーションは変更できませんでした。" in caplog.messages[-1]
+    if expected_error:
+        assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
+
+
+def test_parallelism_requires_yes_before_accessing_api() -> None:
+    service = Mock()
+    args = argparse.Namespace(parallelism=2, yes=False)
+    command = ChangeAttributesPerAnnotation(service, Mock(), args)
+
+    with pytest.raises(SystemExit) as exc_info:
+        command.main()
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+    service.api.get_annotation_specs.assert_not_called()

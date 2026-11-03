@@ -106,6 +106,22 @@ CSVのフォーマットは以下の通りです。
 
 
 
+並列に処理する
+--------------------------
+
+``--parallelism`` で並列に処理するタスク数（2～4）を指定できます。指定しない場合は逐次処理します。
+並列処理する場合は、``--yes`` も指定してください。同じタスク内の入力データは逐次処理します。
+
+.. code-block:: console
+
+    $ annofabcli annotation change_data_per_annotation --project_id p1 --json file://annotations.json \
+    --backup backup_dir/ --parallelism 4 --yes
+
+
+タスクの処理中にエラーが発生しても、ほかのタスクの処理結果を集計して表示します。
+タスクの処理に失敗した場合は、集計後に終了ステータス1で終了します。
+
+
 Usage Details
 =================================
 

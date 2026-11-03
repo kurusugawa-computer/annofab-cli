@@ -7,6 +7,7 @@ import logging
 import sys
 from collections import defaultdict
 from collections.abc import Collection
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -30,6 +32,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
     get_list_from_args,
 )
+from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -66,6 +69,9 @@ class ChangeAnnotationDataCount:
 
     failed: int
     """変更に失敗またはスキップしたアノテーション数。"""
+
+    task_failed: bool = False
+    """タスク処理で例外が発生したか。"""
 
 
 @dataclass(frozen=True)
@@ -281,6 +287,7 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
 
         success_count = 0
         failed_count = 0
+        task_failed = False
         annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, annotation_list_per_input_data_id)
         for input_data_id, sub_anno_list in annotation_list_per_input_data_id.items():
             try:
@@ -290,12 +297,27 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
             except Exception:
                 logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションのdata変更に失敗しました。", exc_info=True)
                 failed_count += len(sub_anno_list)
+                task_failed = True
                 continue
 
-        return True, ChangeAnnotationDataCount(success=success_count, failed=failed_count)
+        return True, ChangeAnnotationDataCount(success=success_count, failed=failed_count, task_failed=task_failed)
 
-    def change_annotation_data(self, anno_list: list[TargetAnnotationData]) -> None:
-        """アノテーションごとにdataを変更する。"""
+    def change_annotation_data(self, anno_list: list[TargetAnnotationData], *, parallelism: int | None = None) -> None:
+        """タスク単位でアノテーションを変更する。
+
+        Args:
+            anno_list: 各アノテーションの変更内容。
+            parallelism: 同時に処理するタスク数。Noneの場合は逐次処理する。
+
+        Returns:
+            None。
+        """
+        if parallelism is not None and any(annotation.attributes is not None for annotation in anno_list):
+            try:
+                self.get_annotation_specs()
+            except Exception:
+                logger.warning("アノテーション仕様の事前取得に失敗しました。属性値を変更する入力データの処理時に再取得します。", exc_info=True)
+
         changed_task_count = 0
         total_failed_count = 0
         total_success_count = 0
@@ -304,9 +326,26 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
         total_task_count = len(annotation_list_per_task_id_input_data_id)
         total_annotation_count = len(anno_list)
 
-        for task_index, (task_id, input_data_dict) in enumerate(annotation_list_per_task_id_input_data_id.items(), start=1):
+        def _process_task(task_index_and_items: tuple[int, tuple[str, dict[str, list[TargetAnnotationData]]]]) -> tuple[bool, ChangeAnnotationDataCount]:
+            task_index, (task_id, input_data_dict) = task_index_and_items
             logger.info(f"{task_index} / {total_task_count} 件目 :: task_id='{task_id}' のアノテーションのdataを変更します。")
-            is_changeable_task, count = self.change_annotation_data_for_task(task_id, input_data_dict)
+            # 確認状態やAPIクライアントをタスク間で共有しない。
+            try:
+                main_obj = copy.deepcopy(self) if parallelism is not None else self
+                return main_obj.change_annotation_data_for_task(task_id, input_data_dict)
+            except Exception:
+                logger.warning(f"task_id='{task_id}' :: タスクの処理に失敗しました。", exc_info=True)
+                annotation_count = sum(len(items) for items in input_data_dict.values())
+                return (False, ChangeAnnotationDataCount(success=0, failed=annotation_count, task_failed=True))
+
+        task_items = enumerate(annotation_list_per_task_id_input_data_id.items(), start=1)
+        if parallelism is None:
+            results = [_process_task(item) for item in task_items]
+        else:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                results = list(executor.map(_process_task, task_items))
+
+        for is_changeable_task, count in results:
             total_success_count += count.success
             total_failed_count += count.failed
 
@@ -319,6 +358,10 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
             f"{total_failed_count} 件のアノテーションは変更できませんでした。"
         )
 
+        failed_task_count = sum(count.task_failed for _, count in results)
+        if failed_task_count:
+            raise AnnofabCliException(f"{failed_task_count} 件のタスクの処理に失敗しました。")
+
 
 class ChangeDataPerAnnotation(CommandLine):
     """アノテーションごとにdataを個別変更。"""
@@ -327,6 +370,12 @@ class ChangeDataPerAnnotation(CommandLine):
 
     def main(self) -> None:
         args = self.args
+        if args.parallelism is not None and not args.yes:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.json is not None:
             annotation_items = get_json_from_args(args.json)
@@ -388,7 +437,7 @@ class ChangeDataPerAnnotation(CommandLine):
             include_on_hold_task=args.include_on_hold_task,
             backup_dir=backup_dir,
         )
-        main_obj.change_annotation_data(target_annotation_list)
+        main_obj.change_annotation_data(target_annotation_list, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -444,6 +493,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="アノテーションのバックアップを保存するディレクトリのパス。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
     )
 
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        choices=PARALLELISM_CHOICES,
+        help="並列に処理するタスク数。指定しない場合は逐次処理します。指定した場合は、``--yes`` も指定してください。",
+    )
     parser.set_defaults(subcommand_func=main)
 
 

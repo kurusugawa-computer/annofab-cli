@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import argparse
 import builtins
 import json
 import logging
+from contextlib import nullcontext
+from pathlib import Path
+from threading import Barrier
 from unittest.mock import Mock
 
 import pytest
@@ -11,12 +15,15 @@ from annofabcli.annotation import change_annotation_data_per_annotation
 from annofabcli.annotation.change_annotation_data_per_annotation import (
     ChangeAnnotationDataCount,
     ChangeAnnotationDataPerAnnotationMain,
+    ChangeDataPerAnnotation,
     TargetAnnotationData,
     create_request_body_for_change_data,
     filter_annotation_items_by_task_ids,
     get_annotation_data_list_per_task_id_input_data_id,
     merge_additional_data_list,
 )
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
+from annofabcli.common.exceptions import AnnofabCliException
 
 
 def test_filter_annotation_items_by_task_ids() -> None:
@@ -365,3 +372,138 @@ def test_backup_confirmation_controls_subsequent_task_confirmation(
     assert service.api.put_annotation.call_count == expected_update_count
     for call in service.api.put_annotation.call_args_list:
         assert call.kwargs["request_body"]["details"][0]["body"]["data"] == {"_type": "Range", "begin": 1000, "end": 5000}
+
+
+@pytest.mark.parametrize("failure", ["none", "get_task"])
+@pytest.mark.parametrize("parallelism", [None, 2])
+@pytest.mark.parametrize("attributes", [None, {}])
+def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path, caplog: pytest.LogCaptureFixture, parallelism: int | None, attributes: dict | None, failure: str) -> None:
+    service = Mock()
+    barrier = Barrier(2)
+    updates: list[tuple[str, str]] = []
+
+    def get_task(_project_id, task_id):
+        if failure == "get_task" and task_id == "task1":
+            raise RuntimeError("task API failure")
+        if failure == "none" and parallelism is not None and task_id in {"task1", "task2"}:
+            barrier.wait(timeout=10)
+        return {"task_id": task_id, "status": "complete" if task_id == "complete" else "not_started", "account_id": None}
+
+    def get_annotations(project_id, task_id, *, query_params):
+        return {
+            "success": [
+                {
+                    "project_id": project_id,
+                    "task_id": task_id,
+                    "input_data_id": input_id,
+                    "updated_datetime": "2026-01-01T00:00:00Z",
+                    "format_version": "2.0.0",
+                    "details": [{"annotation_id": "annotation1", "label_id": "label_car", "additional_data_list": [], "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 0, "end": 1}}}],
+                }
+                for input_id in query_params["input_data_id"].split(",")
+            ],
+            "failure": [],
+        }, None
+
+    def update(_project_id, *_args, request_body, **_kwargs):
+        annotation = request_body
+        task_id, input_id = annotation["task_id"], annotation["input_data_id"]
+        backup = json.loads((tmp_path / task_id / f"{input_id}.json").read_text())
+        assert backup["input_data_id"] == input_id
+        assert request_body["details"][0]["body"]["data"]["begin"] == 10
+        updates.append((task_id, input_id))
+        return {}, None
+
+    service.wrapper.get_task_or_none.side_effect = get_task
+    service.api.get_editor_annotations_in_bulk.side_effect = get_annotations
+    service.api.put_annotation.side_effect = update
+    service.api.get_annotation_specs.return_value = ({"additionals": [], "labels": [{"label_id": "label_car", "additional_data_definitions": []}]}, None)
+    main_obj = ChangeAnnotationDataPerAnnotationMain(service, project_id="project1", include_complete_task=False, include_on_hold_task=False, all_yes=True, backup_dir=tmp_path)
+    items = [
+        TargetAnnotationData(task_id=task_id, input_data_id=input_id, annotation_id="annotation1", data={"_type": "Range", "begin": 10, "end": 20}, attributes=attributes)
+        for task_id, input_id in [("task1", "input1"), ("task1", "input2"), ("task2", "input1"), ("complete", "input1")]
+    ]
+
+    expected_error = failure == "get_task"
+    with caplog.at_level(logging.INFO), pytest.raises(AnnofabCliException) if expected_error else nullcontext():
+        main_obj.change_annotation_data(items, parallelism=parallelism)
+
+    expected_updates = [("task2", "input1")] if failure == "get_task" else [("task1", "input1"), ("task1", "input2"), ("task2", "input1")]
+    assert sorted(updates) == expected_updates
+    assert [input_id for task_id, input_id in updates if task_id == "task1"] == ([] if failure == "get_task" else ["input1", "input2"])
+    assert not (tmp_path / "complete").exists()
+    assert "タスクが完了状態" in caplog.text
+    assert ("1/4" if failure == "get_task" else "3/4") in caplog.messages[-1]
+    if expected_error:
+        assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
+    assert service.api.get_annotation_specs.call_count == (0 if attributes is None else 1)
+
+
+def test_parallelism_requires_yes_before_accessing_api() -> None:
+    service = Mock()
+    args = argparse.Namespace(parallelism=2, yes=False)
+    command = ChangeDataPerAnnotation(service, Mock(), args)
+
+    with pytest.raises(SystemExit) as exc_info:
+        command.main()
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+    service.api.get_annotation_specs.assert_not_called()
+
+
+@pytest.mark.parametrize("spec_retry_succeeds", [True, False])
+@pytest.mark.parametrize("attribute_task_status", ["not_started", "complete"])
+def test_failed_spec_prefetch_preserves_data_updates_and_retries_only_when_needed(attribute_task_status: str, caplog: pytest.LogCaptureFixture, *, spec_retry_succeeds: bool) -> None:
+    service = Mock()
+    spec_requests: list[str] = []
+    updated_tasks: list[str] = []
+    barrier = Barrier(2)
+
+    def get_specs(_project_id, **_kwargs):
+        spec_requests.append("get_specs")
+        if len(spec_requests) == 1 or not spec_retry_succeeds:
+            raise RuntimeError("spec API failure")
+        return {"additionals": [], "labels": [{"label_id": "label1", "additional_data_definitions": []}]}, None
+
+    def get_task(_project_id, task_id):
+        barrier.wait(timeout=10)
+        return {"status": attribute_task_status if task_id == "attributes" else "not_started"}
+
+    def get_annotations(project_id, task_id, **_kwargs):
+        return {
+            "success": [
+                {
+                    "project_id": project_id,
+                    "task_id": task_id,
+                    "input_data_id": "input1",
+                    "updated_datetime": "2026-01-01T00:00:00Z",
+                    "details": [{"annotation_id": "anno1", "label_id": "label1", "additional_data_list": [], "body": {"_type": "Inner", "data": {"_type": "Range", "begin": 0, "end": 1}}}],
+                }
+            ],
+            "failure": [],
+        }, None
+
+    def update(_project_id, task_id, _input_data_id, *, request_body, **_kwargs):
+        assert request_body["details"][0]["body"]["data"] == {"_type": "Range", "begin": 10, "end": 20}
+        updated_tasks.append(task_id)
+        return {}, None
+
+    service.api.get_annotation_specs.side_effect = get_specs
+    service.wrapper.get_task_or_none.side_effect = get_task
+    service.api.get_editor_annotations_in_bulk.side_effect = get_annotations
+    service.api.put_annotation.side_effect = update
+    main_obj = ChangeAnnotationDataPerAnnotationMain(service, project_id="project1", include_complete_task=False, include_on_hold_task=False, all_yes=True)
+    items = [
+        TargetAnnotationData(task_id=task_id, input_data_id="input1", annotation_id="anno1", data={"_type": "Range", "begin": 10, "end": 20}, attributes={} if task_id == "attributes" else None)
+        for task_id in ["attributes", "data_only"]
+    ]
+
+    expected_error = attribute_task_status == "not_started" and not spec_retry_succeeds
+    with caplog.at_level(logging.INFO), pytest.raises(AnnofabCliException) if expected_error else nullcontext():
+        main_obj.change_annotation_data(items, parallelism=2)
+
+    expected_updated_tasks = ["attributes", "data_only"] if attribute_task_status == "not_started" and spec_retry_succeeds else ["data_only"]
+    assert sorted(updated_tasks) == expected_updated_tasks
+    assert len(spec_requests) == (2 if attribute_task_status == "not_started" else 1)
+    assert f"{len(expected_updated_tasks)}/2" in caplog.messages[-1]
+    assert any(record.levelno == logging.WARNING and record.exc_info and "事前取得" in record.message for record in caplog.records)

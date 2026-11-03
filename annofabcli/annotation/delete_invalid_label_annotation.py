@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import copy
+import functools
 import logging
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -16,6 +19,7 @@ from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -199,12 +203,54 @@ class DeleteInvalidLabelAnnotationMain(CommandLineWithConfirm):
 
         return result, deleted_annotation_count
 
+    def delete_invalid_label_annotation_for_task_wrapper(
+        self,
+        task_index_and_id: tuple[int, str],
+        *,
+        existing_label_ids: set[str],
+        backup_dir: Path | None = None,
+        copy_service: bool = False,
+    ) -> tuple[bool, int]:
+        """タスクごとの処理を実行し、失敗してもほかのタスクの処理を継続する。
+
+        Args:
+            task_index_and_id: 処理対象タスクのインデックスとタスクID。
+            existing_label_ids: アノテーション仕様に存在するラベルIDの集合。
+            backup_dir: バックアップディレクトリ。
+            copy_service: 並列処理でAPIクライアントを共有しないために複製するかどうか。
+
+        Returns:
+            更新処理を実行したかどうかと、削除したアノテーション数。
+        """
+        task_index, task_id = task_index_and_id
+        try:
+            main_obj = (
+                DeleteInvalidLabelAnnotationMain(
+                    copy.deepcopy(self.service),
+                    project_id=self.project_id,
+                    include_complete_task=self.include_complete_task,
+                    all_yes=self.all_yes,
+                )
+                if copy_service
+                else self
+            )
+            return main_obj.delete_invalid_label_annotation_for_task(
+                task_id,
+                existing_label_ids=existing_label_ids,
+                backup_dir=backup_dir,
+                task_index=task_index,
+            )
+        except Exception:
+            logger.warning(f"タスク'{task_id}'の不正なラベルを持つアノテーションの削除に失敗しました。", exc_info=True)
+            return False, 0
+
     def delete_invalid_label_annotation_for_task_list(
         self,
         task_id_list: list[str],
         *,
         existing_label_ids: set[str],
         backup_dir: Path | None = None,
+        parallelism: int | None = None,
     ) -> None:
         """
         複数のタスクに対して、アノテーション仕様に存在しないラベルを持つアノテーションを削除する。
@@ -213,28 +259,33 @@ class DeleteInvalidLabelAnnotationMain(CommandLineWithConfirm):
             task_id_list: タスクID一覧。
             existing_label_ids: アノテーション仕様に存在するラベルIDの集合。
             backup_dir: バックアップディレクトリ。
+            parallelism: 並列度。Noneなら逐次処理。
+
+        Returns:
+            None
         """
+        # 同じタスクを同時に更新したり、バックアップを上書きしたりしないようにする。
+        task_id_list = list(dict.fromkeys(task_id_list))
         project_title = self.facade.get_project_title(self.project_id)
         logger.info(f"プロジェクト'{project_title}'に対して、タスク{len(task_id_list)} 件の不正なラベルを持つアノテーションを削除します。")
 
         if backup_dir is not None:
             backup_dir.mkdir(exist_ok=True, parents=True)
 
-        success_task_count = 0
-        deleted_annotation_count = 0
-        for task_index, task_id in enumerate(task_id_list):
-            try:
-                result, sub_deleted_annotation_count = self.delete_invalid_label_annotation_for_task(
-                    task_id,
-                    existing_label_ids=existing_label_ids,
-                    backup_dir=backup_dir,
-                    task_index=task_index,
-                )
-                deleted_annotation_count += sub_deleted_annotation_count
-                if result:
-                    success_task_count += 1
-            except Exception:
-                logger.warning(f"タスク'{task_id}'の不正なラベルを持つアノテーションの削除に失敗しました。", exc_info=True)
+        func = functools.partial(
+            self.delete_invalid_label_annotation_for_task_wrapper,
+            existing_label_ids=existing_label_ids,
+            backup_dir=backup_dir,
+            copy_service=parallelism is not None,
+        )
+        if parallelism is not None:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                results = list(executor.map(func, enumerate(task_id_list)))
+        else:
+            results = [func(item) for item in enumerate(task_id_list)]
+
+        success_task_count = sum(result for result, _ in results)
+        deleted_annotation_count = sum(count for _, count in results)
 
         logger.info(f"{success_task_count} / {len(task_id_list)} 件のタスクに対して、アノテーション仕様に存在しないラベルを持つアノテーション {deleted_annotation_count} 件を削除しました。")
 
@@ -277,6 +328,13 @@ class DeleteInvalidLabelAnnotationOfAnnotation(CommandLine):
 
     def main(self) -> None:
         args = self.args
+        if args.parallelism is not None and not args.yes:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
+
         project_id = args.project_id
         task_id_list = annofabcli.common.cli.get_list_from_args(args.task_id) if args.task_id is not None else None
 
@@ -312,6 +370,7 @@ class DeleteInvalidLabelAnnotationOfAnnotation(CommandLine):
             actual_task_id_list,
             existing_label_ids=existing_label_ids,
             backup_dir=backup_dir,
+            parallelism=args.parallelism,
         )
 
 
@@ -337,6 +396,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         required=False,
         help="アノテーションのバックアップを保存するディレクトリを指定してください。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
+    )
+
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        choices=PARALLELISM_CHOICES,
+        help="並列に処理するタスク数。指定しない場合は逐次処理します。指定した場合は、``--yes`` も指定してください。",
     )
 
     parser.set_defaults(subcommand_func=main)
