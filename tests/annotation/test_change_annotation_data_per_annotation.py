@@ -4,6 +4,7 @@ import argparse
 import builtins
 import json
 import logging
+from contextlib import nullcontext
 from pathlib import Path
 from threading import Barrier
 from unittest.mock import Mock
@@ -22,6 +23,7 @@ from annofabcli.annotation.change_annotation_data_per_annotation import (
     merge_additional_data_list,
 )
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
+from annofabcli.common.exceptions import AnnofabCliException
 
 
 def test_filter_annotation_items_by_task_ids() -> None:
@@ -372,15 +374,18 @@ def test_backup_confirmation_controls_subsequent_task_confirmation(
         assert call.kwargs["request_body"]["details"][0]["body"]["data"] == {"_type": "Range", "begin": 1000, "end": 5000}
 
 
+@pytest.mark.parametrize("failure", ["none", "get_task"])
 @pytest.mark.parametrize("parallelism", [None, 2])
 @pytest.mark.parametrize("attributes", [None, {}])
-def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path, caplog: pytest.LogCaptureFixture, parallelism: int | None, attributes: dict | None) -> None:
+def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path, caplog: pytest.LogCaptureFixture, parallelism: int | None, attributes: dict | None, failure: str) -> None:
     service = Mock()
     barrier = Barrier(2)
     updates: list[tuple[str, str]] = []
 
     def get_task(_project_id, task_id):
-        if parallelism is not None and task_id in {"task1", "task2"}:
+        if failure == "get_task" and task_id == "task1":
+            raise RuntimeError("task API failure")
+        if failure == "none" and parallelism is not None and task_id in {"task1", "task2"}:
             barrier.wait(timeout=10)
         return {"task_id": task_id, "status": "complete" if task_id == "complete" else "not_started", "account_id": None}
 
@@ -419,14 +424,18 @@ def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path,
         for task_id, input_id in [("task1", "input1"), ("task1", "input2"), ("task2", "input1"), ("complete", "input1")]
     ]
 
-    with caplog.at_level(logging.INFO):
+    expected_error = failure == "get_task"
+    with caplog.at_level(logging.INFO), pytest.raises(AnnofabCliException) if expected_error else nullcontext():
         main_obj.change_annotation_data(items, parallelism=parallelism)
 
-    assert sorted(updates) == [("task1", "input1"), ("task1", "input2"), ("task2", "input1")]
-    assert [input_id for task_id, input_id in updates if task_id == "task1"] == ["input1", "input2"]
+    expected_updates = [("task2", "input1")] if failure == "get_task" else [("task1", "input1"), ("task1", "input2"), ("task2", "input1")]
+    assert sorted(updates) == expected_updates
+    assert [input_id for task_id, input_id in updates if task_id == "task1"] == ([] if failure == "get_task" else ["input1", "input2"])
     assert not (tmp_path / "complete").exists()
     assert "タスクが完了状態" in caplog.text
-    assert "3/4" in caplog.messages[-1]
+    assert ("1/4" if failure == "get_task" else "3/4") in caplog.messages[-1]
+    if expected_error:
+        assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
     assert service.api.get_annotation_specs.call_count == (0 if attributes is None else 1)
 
 
