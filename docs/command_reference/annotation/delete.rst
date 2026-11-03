@@ -50,69 +50,7 @@ Examples
     完了状態のタスクのアノテーションは、デフォルトでは削除できません。 ``--include_complete_task`` を指定すれば、完了状態のタスクに含まれるアノテーションも削除できます。
 
 
-CSVに ``annotation_id`` を指定して削除する
-----------------------------------------------------
-
-CSVのフォーマットは以下の通りです。
-
-* カンマ区切り
-* ヘッダ行あり
-
-
-.. csv-table::
-   :header: 列名,必須,備考
-
-    task_id,Yes,
-    input_data_id,Yes,
-    annotation_id,Yes,
-    
-
-以下はCSVファイルのサンプルです。
-
-.. code-block::
-    :caption: annotation.csv
-
-    task_id,input_data_id,annotation_id
-    t1,i1,a1
-    t1,i1,a2
-    t2,i2,a3
-
-
-
-.. code-block::
-
-    $ annofabcli annotation delete --project_id p1 --csv annotation.csv
-
-
-
-``annotation_id`` をJSON形式で指定して削除する
-----------------------------------------------------
-
-以下は、JSONファイルのサンプルです。
-
-
-.. code-block::
-    :caption: annotation.json
-
-    [
-        {
-            "task_id": "t1",
-            "input_data_id":"i1",
-            "annotation_id": "a1"
-        }
-    ]
-
-
-JSONのキーは、 ``--csv`` に指定するCSVファイルの列に対応します。
-``--json`` にJSON形式の文字列、またはJSONファイルのパスを指定できます。
-
-.. code-block::
-
-    $ annofabcli annotation delete --project_id p1 --json file://annotation.json
-
-
-
-
+ID一覧で指定して削除する場合は、 `annotation delete_per_annotation <delete_per_annotation.html>`_ を使用してください。
 
 
 Usage Details

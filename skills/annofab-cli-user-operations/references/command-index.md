@@ -18,9 +18,10 @@
 - `annofabcli annotation copy`: アノテーションをコピーします．
 - `annofabcli annotation create`: 各アノテーションを新規作成します。
 - `annofabcli annotation create_classification`: 全体アノテーション（Classification）を作成します。
-- `annofabcli annotation delete`: アノテーションを削除します。
+- `annofabcli annotation delete`: タスクと検索条件を指定してアノテーションを削除します。
 - `annofabcli annotation delete_invalid_attribute_value`: ラベルに含まれていない属性値を削除します。
 - `annofabcli annotation delete_invalid_label_annotation`: アノテーション仕様に存在しないラベルを持つアノテーションを削除します。
+- `annofabcli annotation delete_per_annotation`: ID一覧で指定されたアノテーションを削除します。
 - `annofabcli annotation download`: アノテーションZIPをダウンロードします。
 - `annofabcli annotation dump`: ``annotation restore`` コマンドに読み込ませることができるアノテーション情報を出力します。
 - `annofabcli annotation export`: 指定したタスクのアノテーションを、アノテーションZIPと同じディレクトリ構成・JSON形式で書き出します。

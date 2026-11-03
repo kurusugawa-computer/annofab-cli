@@ -10,6 +10,7 @@ import annofabcli.annotation.copy_annotation
 import annofabcli.annotation.create_annotation
 import annofabcli.annotation.create_classification_annotation
 import annofabcli.annotation.delete_annotation
+import annofabcli.annotation.delete_annotation_per_annotation
 import annofabcli.annotation.delete_invalid_attribute_value
 import annofabcli.annotation.delete_invalid_label_annotation
 import annofabcli.annotation.download_annotation_zip
@@ -41,6 +42,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.annotation.delete_annotation.create_parser(subparsers)
     annofabcli.annotation.delete_invalid_attribute_value.create_parser(subparsers)
     annofabcli.annotation.delete_invalid_label_annotation.create_parser(subparsers)
+    annofabcli.annotation.delete_annotation_per_annotation.create_parser(subparsers)
     annofabcli.annotation.download_annotation_zip.create_parser(subparsers)
     annofabcli.annotation.dump_annotation.create_parser(subparsers)
     annofabcli.annotation.export_annotation.create_parser(subparsers)
