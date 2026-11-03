@@ -3,8 +3,10 @@ from unittest.mock import Mock
 import pytest
 from annofabapi.models import JobStatus
 
+from annofabcli.common.cancellation import Cancellation
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadFileTarget, DownloadingFile
+from annofabcli.common.exceptions import UpdatedFileForDownloadingError
 
 
 def test_common_updater_deduplicates_projects_and_targets_and_uses_wait_options():
@@ -28,3 +30,23 @@ def test_empty_update_selection_is_rejected_before_submitting_jobs(projects, tar
     with pytest.raises(ValueError):
         DownloadingFile(service).update_download_files(projects, targets)
     assert service.mock_calls == []
+
+
+def test_cancellable_update_wait_polls_until_success():
+    service = Mock()
+    service.api.post_project_tasks_update.return_value = ({"job": {"job_id": "job1"}}, None)
+    service.api.get_project_job.side_effect = [
+        ({"list": [{"job_id": "job1", "job_status": "progress"}]}, None),
+        ({"list": [{"job_id": "job1", "job_status": "succeeded"}]}, None),
+    ]
+    DownloadingFile(service, cancellation=Cancellation()).update_download_files(["prj1"], [DownloadFileTarget.TASK], wait_options=WaitOptions(interval=0, max_tries=2))
+    assert service.api.get_project_job.call_count == 2
+
+
+@pytest.mark.parametrize("jobs", [[], [{"job_id": "job1", "job_status": "failed"}], [{"job_id": "job1", "job_status": "progress"}]])
+def test_cancellable_update_wait_rejects_missing_failed_or_timed_out_job(jobs):
+    service = Mock()
+    service.api.post_project_tasks_update.return_value = ({"job": {"job_id": "job1"}}, None)
+    service.api.get_project_job.return_value = ({"list": jobs}, None)
+    with pytest.raises(UpdatedFileForDownloadingError):
+        DownloadingFile(service, cancellation=Cancellation()).update_download_files(["prj1"], [DownloadFileTarget.TASK], wait_options=WaitOptions(interval=0, max_tries=1))

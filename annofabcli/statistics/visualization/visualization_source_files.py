@@ -8,6 +8,7 @@ from typing import Any
 
 import annofabapi.utils
 
+from annofabcli.common.cancellation import Cancellation
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.download import DownloadFileTarget, DownloadingFile
 from annofabcli.common.exceptions import DownloadingFileNotFoundError
@@ -28,10 +29,14 @@ class VisualizationSourceFiles:
         annofab_service: annofabapi.Resource,
         project_id: str,
         target_dir: Path,
+        *,
+        cancellation: Cancellation | None = None,
     ) -> None:
         self.annofab_service = annofab_service
         self.project_id = project_id
         self.target_dir = target_dir
+        self.cancellation = cancellation or Cancellation()
+        """ダウンロードとタスク履歴取得を中断するための共有状態。"""
 
         # ダウンロードした一括情報
         self.task_json_path = self.target_dir / f"{self.project_id}__task.json"
@@ -145,7 +150,8 @@ class VisualizationSourceFiles:
                 最新の状態を取得したいときに、このオプションを利用することを推奨しています。
         """
 
-        downloading_obj = DownloadingFile(self.annofab_service)
+        self.cancellation.check()
+        downloading_obj = DownloadingFile(self.annofab_service, cancellation=self.cancellation)
 
         wait_options = WaitOptions(interval=60, max_tries=360)
         if is_latest:
@@ -155,10 +161,13 @@ class VisualizationSourceFiles:
             downloading_obj.update_download_files([self.project_id], targets, wait_options=wait_options)
             is_latest = False
 
+        self.cancellation.check()
         downloading_obj.download_task_json(self.project_id, dest_path=self.task_json_path, is_latest=is_latest, wait_options=wait_options)
 
+        self.cancellation.check()
         downloading_obj.download_input_data_json(self.project_id, dest_path=self.input_data_json_path, is_latest=is_latest, wait_options=wait_options)
 
+        self.cancellation.check()
         if should_download_annotation_zip:
             downloading_obj.download_annotation_zip(
                 self.project_id,
@@ -167,6 +176,7 @@ class VisualizationSourceFiles:
                 wait_options=wait_options,
             )
 
+        self.cancellation.check()
         try:
             downloading_obj.download_comment_json(self.project_id, dest_path=self.comment_json_path)
         except DownloadingFileNotFoundError:
@@ -174,6 +184,7 @@ class VisualizationSourceFiles:
             # その場合でも、処理は継続できるので、空listのJSONファイルを作成して、処理が継続できるようにする。
             self.comment_json_path.write_text("[]", encoding="utf-8")
 
+        self.cancellation.check()
         try:
             downloading_obj.download_task_history_event_json(self.project_id, dest_path=self.task_history_event_json_path)
         except DownloadingFileNotFoundError:
@@ -181,6 +192,7 @@ class VisualizationSourceFiles:
             # その場合でも、処理は継続できるので、空listのJSONファイルを作成して、処理が継続できるようにする。
             self.task_history_event_json_path.write_text("[]", encoding="utf-8")
 
+        self.cancellation.check()
         if should_get_task_histories_one_of_each:
             # タスク履歴APIを一つずつ実行して、JSONファイルを生成する
             # 先にタスク全件ファイルをダウンロードする必要がある
@@ -208,6 +220,7 @@ class VisualizationSourceFiles:
         task_index = 0
         result = {}
         for task_id in task_ids:
+            self.cancellation.check()
             if task_index % 100 == 0:
                 logger.debug(f"{self.logging_prefix}: タスク履歴一覧取得中 {task_index} / {len(task_ids)} 件目")
             sub_task_histories, _ = self.annofab_service.api.get_task_histories(self.project_id, task_id)

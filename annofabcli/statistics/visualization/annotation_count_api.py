@@ -10,6 +10,7 @@ from annofabapi.models import Task
 from annofabapi.plugin import ThreeDimensionAnnotationType
 from annofabapi.util.annotation_specs import get_label_name_en
 
+from annofabcli.common.cancellation import Cancellation
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ def count_annotations_from_api(
     *,
     include_labels: Collection[str] | None = None,
     exclude_labels: Collection[str] | None = None,
+    cancellation: Cancellation | None = None,
 ) -> AnnotationCount:
     """一覧APIからタスクごとの件数を集計します。外部ファイルは取得しません。
 
@@ -63,6 +65,7 @@ def count_annotations_from_api(
         tasks: 集計対象タスク。
         include_labels: 含めるラベルの英語名。
         exclude_labels: 除外するラベルの英語名。
+        cancellation: API呼び出しの区切りで確認する中断要求。
 
     Returns:
         アノテーションがないタスクも0件で含む集計値。
@@ -84,6 +87,8 @@ def count_annotations_from_api(
         Returns:
             検索結果の総件数。over_limitは一覧の取得上限を表し、総件数は制限しません。
         """
+        if cancellation is not None:
+            cancellation.check()
         query: dict[str, str | bool] = {"task_id": task_id, "exact_match_task_id": True}
         if label_id is not None:
             query["label_id"] = label_id

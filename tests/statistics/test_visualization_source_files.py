@@ -68,9 +68,9 @@ def test_write_latest_files_submits_selected_updates_before_waiting(tmp_path, wi
         service.api.post_project_inputs_update.assert_called_once_with("p")
         assert service.api.post_annotation_archive_update.call_count == (1 if with_annotation else 0)
         assert service.wrapper.download_project_tasks_json.call_count == 0
-        return JobStatus.SUCCEEDED
+        return {"list": [{"job_id": "job", "job_status": JobStatus.SUCCEEDED.value}]}, None
 
-    service.wrapper.wait_until_job_finished.side_effect = wait_for_job
+    service.api.get_project_job.side_effect = wait_for_job
     for name in ["download_project_tasks_json", "download_project_inputs_json", "download_project_comments_json", "download_project_task_histories_json", "download_project_task_history_events_json"]:
         getattr(service.wrapper, name).side_effect = lambda _p, dest: Path(dest).write_text("[]", encoding="utf-8")
     service.wrapper.download_annotation_zip.side_effect = lambda _p, dest: Path(dest).write_bytes(b"archive")
@@ -79,7 +79,7 @@ def test_write_latest_files_submits_selected_updates_before_waiting(tmp_path, wi
     assert json.loads(sources.task_json_path.read_text()) == []
     assert json.loads(sources.input_data_json_path.read_text()) == []
     assert sources.annotation_zip_path.exists() is with_annotation
-    assert service.wrapper.wait_until_job_finished.call_count == (3 if with_annotation else 2)
+    assert service.api.get_project_job.call_count == (3 if with_annotation else 2)
     assert service.api.post_project_tasks_update.call_count == 1
     assert service.api.post_project_inputs_update.call_count == 1
     assert service.api.post_annotation_archive_update.call_count == (1 if with_annotation else 0)

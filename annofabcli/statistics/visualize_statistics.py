@@ -16,6 +16,7 @@ import pandas
 from annofabapi.models import ProjectMemberRole, TaskPhase
 
 import annofabcli
+from annofabcli.common.cancellation import Cancellation
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
     PARALLELISM_CHOICES,
@@ -453,6 +454,8 @@ class VisualizingStatisticsMain:
         user_info_masker: UserInfoMasker | None = None,
     ) -> None:
         self.service = service
+        self.cancellation = Cancellation()
+        """並列ワーカーに中断要求を伝えるための共有状態。"""
         self.facade = AnnofabApiFacade(service)
         self.temp_dir = temp_dir
         self.task_completion_criteria = task_completion_criteria
@@ -524,6 +527,7 @@ class VisualizingStatisticsMain:
                 tasks,
                 include_labels=self.production_volume_include_labels,
                 exclude_labels=self.production_volume_exclude_labels,
+                cancellation=self.cancellation,
             )
         missing_task_ids = {task["task_id"] for task in tasks} - set(annotation_count.df["task_id"])
         if missing_task_ids:
@@ -540,6 +544,7 @@ class VisualizingStatisticsMain:
 
         """
 
+        self.cancellation.check()
         self.facade.require_project_access(project_id, project_member_roles=[ProjectMemberRole.OWNER, ProjectMemberRole.TRAINING_DATA_USER])
         project_info = self.get_project_info(project_id)
         logger.info(f"project_title='{project_info.project_title}'")
@@ -588,6 +593,7 @@ class VisualizingStatisticsMain:
             self.service,
             project_id,
             self.temp_dir,
+            cancellation=self.cancellation,
         )
         if not self.not_download_visualization_source_files:
             visualization_source_files.write_files(
@@ -596,7 +602,9 @@ class VisualizingStatisticsMain:
                 should_download_annotation_zip=(annotation_count is None and source == AnnotationCountSource.ZIP) or is_video_project,
             )
 
+        self.cancellation.check()
         annotation_count = self._prepare_annotation_count(visualization_source_files, annotation_count, source)
+        self.cancellation.check()
 
         write_obj = WriteCsvGraph(
             self.service,
@@ -619,15 +627,21 @@ class VisualizingStatisticsMain:
             user_info_masker=self.user_info_masker,
         )
 
+        self.cancellation.check()
         write_obj.prepare_user_info_mask()
+        self.cancellation.check()
         write_obj._catch_exception(write_obj.write_user_performance)()  # noqa: SLF001
+        self.cancellation.check()
         write_obj._catch_exception(write_obj.write_worktime_per_date)(self.user_ids)  # noqa: SLF001
 
+        self.cancellation.check()
         write_obj._catch_exception(write_obj.write_task_info)()  # noqa: SLF001
 
         # 折れ線グラフ
+        self.cancellation.check()
         write_obj.write_cumulative_linegraph_by_user(self.user_ids)
 
+        self.cancellation.check()
         if not self.minimal_output:
             write_obj._catch_exception(write_obj.write_user_productivity_per_date)(self.user_ids)  # noqa: SLF001
 
@@ -659,7 +673,12 @@ class VisualizingStatisticsMain:
         wrap = functools.partial(self.visualize_statistics_wrapper, root_output_dir=root_output_dir)
         if parallelism is not None:
             with ThreadPoolExecutor(max_workers=parallelism) as executor:
-                result_list = list(executor.map(wrap, project_id_list))
+                try:
+                    result_list = list(executor.map(wrap, project_id_list))
+                except KeyboardInterrupt:
+                    self.cancellation.cancel()
+                    executor.shutdown(wait=True, cancel_futures=True)
+                    raise
                 output_project_dir_list = [e for e in result_list if e is not None]
         else:
             for project_id in project_id_list:
