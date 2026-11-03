@@ -7,6 +7,7 @@ import logging
 import sys
 from collections import defaultdict
 from collections.abc import Collection
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -25,6 +26,7 @@ from annofabcli.annotation.editor_props import validate_editor_props_for_cli
 from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -294,14 +296,35 @@ class CreateAnnotationMain(CommandLineWithConfirm):
                     last_updated_datetime=task["updated_datetime"],
                 )
 
-    def create(self, items: list[CreateAnnotationItem]) -> None:
-        """アノテーションを作成する。"""
+    def create(self, items: list[CreateAnnotationItem], *, parallelism: int | None = None) -> None:
+        """タスク単位でアノテーションを作成する。
+
+        Args:
+            items: 各アノテーションの作成内容。
+            parallelism: 同時に処理するタスク数。Noneの場合は逐次処理する。
+
+        Returns:
+            None。
+        """
         grouped_items = group_annotation_items(items)
         success_count = 0
         failed_count = 0
-        for task_index, (task_id, items_by_input_data_id) in enumerate(grouped_items.items()):
+
+        def _process_task(task_index_and_items: tuple[int, tuple[str, dict[str, list[CreateAnnotationItem]]]]) -> CreateAnnotationCount:
+            task_index, (task_id, items_by_input_data_id) = task_index_and_items
             logger.info(f"{task_index + 1} / {len(grouped_items)} 件目 :: task_id='{task_id}' :: アノテーションを作成します。")
-            count = self.create_for_task(task_id, items_by_input_data_id)
+            # 確認状態やAPIクライアントをタスク間で共有しない。
+            main_obj = copy.deepcopy(self) if parallelism is not None else self
+            return main_obj.create_for_task(task_id, items_by_input_data_id)
+
+        task_items = enumerate(grouped_items.items(), start=0)
+        if parallelism is None:
+            results = [_process_task(item) for item in task_items]
+        else:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                results = list(executor.map(_process_task, task_items))
+
+        for count in results:
             success_count += count.success
             failed_count += count.failed
         logger.info(f"{success_count}/{len(items)} 件のアノテーションを作成しました。{failed_count}件のアノテーションは作成できませんでした。")
@@ -314,6 +337,12 @@ class CreateAnnotation(CommandLine):
 
     def main(self) -> None:
         args = self.args
+        if args.parallelism is not None and not args.yes:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         if args.json is not None:
             input_items = get_json_from_args(args.json)
             if not isinstance(input_items, list):
@@ -359,7 +388,7 @@ class CreateAnnotation(CommandLine):
             all_yes=args.yes,
             converter=converter,
             backup_dir=Path(args.backup) if args.backup is not None else None,
-        ).create(items)
+        ).create(items, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -380,6 +409,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--include_break_task", action="store_true", help="休憩中状態のタスクにもアノテーションを作成します。")
     parser.add_argument("--include_on_hold_task", action="store_true", help="保留中状態のタスクにもアノテーションを作成します。")
     parser.add_argument("--backup", type=Path, help="アノテーションのバックアップを保存するディレクトリのパス。アノテーションの復元は ``annotation restore`` コマンドで実現できます。")
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        choices=PARALLELISM_CHOICES,
+        help="並列に処理するタスク数。指定しない場合は逐次処理します。指定した場合は、``--yes`` も指定してください。",
+    )
     parser.set_defaults(subcommand_func=main)
 
 

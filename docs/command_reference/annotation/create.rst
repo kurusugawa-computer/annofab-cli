@@ -77,6 +77,18 @@ CSV形式で指定する
 
 ``--backup`` に実行前のアノテーション情報を保存するディレクトリを指定できます。作成したアノテーションを取り消すには、 `annotation restore <../annotation/restore.html>`_ コマンドを使用してください。
 
+並列に処理する
+--------------------------
+
+``--parallelism`` で並列に処理するタスク数（2～4）を指定できます。指定しない場合は逐次処理します。
+並列処理する場合は、``--yes`` も指定してください。同じタスク内の入力データは逐次処理します。
+
+.. code-block:: console
+
+    $ annofabcli annotation create --project_id p1 --json file://annotations.json \
+    --backup backup_dir/ --parallelism 4 --yes
+
+
 Usage Details
 =================================
 

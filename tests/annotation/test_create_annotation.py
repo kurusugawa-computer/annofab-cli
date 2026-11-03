@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
+from threading import Barrier
 from typing import Any
 from unittest.mock import Mock
 
@@ -10,6 +11,7 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 
 import annofabcli.annotation.create_annotation
 from annofabcli.annotation.create_annotation import (
+    CreateAnnotation,
     CreateAnnotationCount,
     CreateAnnotationItem,
     CreateAnnotationMain,
@@ -18,6 +20,7 @@ from annofabcli.annotation.create_annotation import (
     get_annotation_items_from_csv,
 )
 from annofabcli.annotation.create_annotation_converter import CreateAnnotationConverter
+from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
 
 annotation_specs = json.loads(Path("tests/data/annotation/import_annotation/annotation_specs.json").read_text(encoding="utf-8"))
 
@@ -194,6 +197,7 @@ def test_main__task_idで絞り込みし存在しないtask_idを警告する(tm
         change_operator_to_me=False,
         editor_props=None,
         yes=True,
+        parallelism=None,
     )
     service = Mock()
     service.api.get_annotation_specs.return_value = (annotation_specs, None)
@@ -209,3 +213,85 @@ def test_main__task_idで絞り込みし存在しないtask_idを警告する(tm
     assert [item.task_id for item in actual_items] == ["task1"]
     assert [item.input_data_id for item in actual_items] == ["input1"]
     assert "task3" in caplog.text
+
+
+@pytest.mark.parametrize("parallelism", [None, 2])
+@pytest.mark.parametrize("role", ["owner", "accepter"])
+def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path, caplog: pytest.LogCaptureFixture, parallelism: int | None, role: str) -> None:
+    service = Mock()
+    barrier = Barrier(2)
+    updates: list[tuple[str, str]] = []
+    events: list[tuple[str, str]] = []
+
+    def get_task(_project_id, task_id):
+        if parallelism is not None and task_id in {"task1", "task2"}:
+            barrier.wait(timeout=10)
+        return {"task_id": task_id, "status": "complete" if task_id == "complete" else "not_started", "account_id": "old_operator", "updated_datetime": "2026-01-01T00:00:00Z"}
+
+    def get_annotations(project_id, task_id, *, query_params):
+        return {
+            "success": [
+                {"project_id": project_id, "task_id": task_id, "input_data_id": input_id, "updated_datetime": "2026-01-01T00:00:00Z", "format_version": "2.0.0", "details": []}
+                for input_id in query_params["input_data_id"].split(",")
+            ],
+            "failure": [],
+        }, None
+
+    def update(_project_id, *_args, request_body, **_kwargs):
+        annotation = request_body
+        task_id, input_id = annotation["task_id"], annotation["input_data_id"]
+        backup = json.loads((tmp_path / task_id / f"{input_id}.json").read_text())
+        assert backup["input_data_id"] == input_id
+        assert request_body["details"][0]["_type"] == "Create"
+        updates.append((task_id, input_id))
+        events.append((task_id, input_id))
+        return {}, None
+
+    def change_operator(_project_id, task_id, *, operator_account_id, last_updated_datetime):
+        events.append((task_id, operator_account_id))
+        return {"updated_datetime": last_updated_datetime}
+
+    service.api.account_id = "current_operator"
+    service.wrapper.change_task_operator.side_effect = change_operator
+    service.wrapper.get_task_or_none.side_effect = get_task
+    service.api.get_editor_annotations_in_bulk.side_effect = get_annotations
+    service.api.put_annotation.side_effect = update
+    service.api.get_my_member_in_project.return_value = ({"member_role": role}, None)
+    main_obj = CreateAnnotationMain(
+        service,
+        project_id="project1",
+        include_complete_task=False,
+        include_break_task=False,
+        include_on_hold_task=False,
+        all_yes=True,
+        backup_dir=tmp_path,
+        converter=CreateAnnotationConverter(project, annotation_specs, default_editor_props={}),
+    )
+    items = [
+        CreateAnnotationItem(task_id=task_id, input_data_id=input_id, label="whole", data={"_type": "Classification"})
+        for task_id, input_id in [("task1", "input1"), ("task1", "input2"), ("task2", "input1"), ("complete", "input1")]
+    ]
+
+    with caplog.at_level(logging.INFO):
+        main_obj.create(items, parallelism=parallelism)
+
+    assert sorted(updates) == [("task1", "input1"), ("task1", "input2"), ("task2", "input1")]
+    assert [input_id for task_id, input_id in updates if task_id == "task1"] == ["input1", "input2"]
+    for task_id, input_ids in [("task1", ["input1", "input2"]), ("task2", ["input1"])]:
+        expected = ["current_operator", *input_ids, "old_operator"] if role == "accepter" else input_ids
+        assert [event for event_task_id, event in events if event_task_id == task_id] == expected
+    assert not (tmp_path / "complete").exists()
+    assert "タスクが完了状態" in caplog.text
+    assert "3/4" in caplog.messages[-1]
+
+
+def test_parallelism_requires_yes_before_accessing_api() -> None:
+    service = Mock()
+    args = argparse.Namespace(parallelism=2, yes=False)
+    command = CreateAnnotation(service, Mock(), args)
+
+    with pytest.raises(SystemExit) as exc_info:
+        command.main()
+
+    assert exc_info.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+    service.api.get_annotation_specs.assert_not_called()
