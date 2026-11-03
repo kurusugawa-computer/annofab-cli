@@ -1,11 +1,14 @@
+import logging
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
 from unittest.mock import Mock
 
 import annofabapi
+import pytest
 
-from annofabcli.input_data.update_input_data import UpdateInputDataMain, UpdateResult
+from annofabcli.input_data.update_input_data import UpdatedInputData, UpdateInputDataMain, UpdateResult
 
 
 def create_old_input_data() -> dict[str, str]:
@@ -79,3 +82,35 @@ def test_update_input_data_with_missing_file_scheme_path(tmp_path: Path) -> None
     assert result == UpdateResult.SKIPPED
     wrapper.put_input_data_from_file.assert_not_called()
     api.put_input_data.assert_not_called()
+
+
+def test_parallel_update_logs_and_counts_results(caplog: pytest.LogCaptureFixture) -> None:
+    service, api, _ = create_service()
+    api.get_input_data_in_bulk.return_value = (
+        {"success": [dict(create_old_input_data(), input_data_id=input_data_id) for input_data_id in ["input1", "failed"]]},
+        None,
+    )
+    main_thread_id = threading.get_ident()
+    updated_ids: list[str] = []
+
+    def put_input_data(_project_id, input_data_id, **_kwargs):
+        assert threading.get_ident() != main_thread_id
+        updated_ids.append(input_data_id)
+        if input_data_id == "failed":
+            raise RuntimeError
+
+    api.put_input_data.side_effect = put_input_data
+    command = UpdateInputDataMain(service, all_yes=True)
+    with caplog.at_level(logging.DEBUG, logger="annofabcli.input_data.update_input_data"):
+        command.update_input_data_list_in_parallel(
+            "project1",
+            [UpdatedInputData(input_data_id, input_data_name="new_name") for input_data_id in ["input1", "missing", "failed"]],
+            parallelism=2,
+        )
+
+    assert sorted(updated_ids) == ["failed", "input1"]
+    assert "成功: 1件, スキップ: 1件, 失敗: 1件" in caplog.text
+    worker_records = [record for record in caplog.records if "件目 ::" in record.message]
+    assert len(worker_records) == 3
+    assert all(record.thread != main_thread_id for record in worker_records)
+    assert any(record.exc_info is not None for record in worker_records)

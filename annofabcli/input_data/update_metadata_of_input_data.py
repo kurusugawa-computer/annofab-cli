@@ -4,8 +4,8 @@ import argparse
 import copy
 import json
 import logging
-import multiprocessing
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import partial
 from typing import Any
@@ -24,6 +24,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.input_data._parallel import isolate_thread_call
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
@@ -117,16 +118,18 @@ class UpdateMetadataMain(CommandLineWithConfirm):
 
         success_count = 0
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
                 for initial_index, batch_metadata_info_list in enumerate(batched(metadata_info_list, BULK_REQUEST_SIZE)):
                     existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [e.input_data_id for e in batch_metadata_info_list])
                     partial_func = partial(
                         self.set_metadata_to_input_data_wrapper,
                         project_id=project_id,
                         overwrite_metadata=overwrite_metadata,
-                        existing_input_data_dict=existing_input_data_dict,
                     )
-                    result_bool_list = pool.map(partial_func, enumerate(batch_metadata_info_list, start=initial_index * BULK_REQUEST_SIZE))
+                    result_bool_list = executor.map(
+                        isolate_thread_call(partial_func, get_input_data_id=lambda item: item[1].input_data_id, existing_input_data_dict=existing_input_data_dict),
+                        enumerate(batch_metadata_info_list, start=initial_index * BULK_REQUEST_SIZE),
+                    )
                     success_count += len([e for e in result_bool_list if e])
 
         else:
@@ -268,7 +271,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="並列度を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)

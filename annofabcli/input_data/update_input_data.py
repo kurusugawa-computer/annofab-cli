@@ -4,8 +4,8 @@ import argparse
 import copy
 import enum
 import logging
-import multiprocessing
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
@@ -29,6 +29,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
+from annofabcli.input_data._parallel import isolate_thread_call
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
@@ -187,15 +188,20 @@ class UpdateInputDataMain(CommandLineWithConfirm):
     ) -> None:
         """複数の入力データを並列的に更新します。"""
 
-        logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。{parallelism}個のプロセスを使用して並列実行します。")
-        with multiprocessing.Pool(parallelism) as pool:
+        logger.info(f"{len(updated_input_data_list)} 件の入力データを更新します。{parallelism}個のスレッドを使用して並列実行します。")
+        with ThreadPoolExecutor(max_workers=parallelism) as executor:
             success_count = 0
             skipped_count = 0
             failed_count = 0
             for initial_index, batch_updated_input_data_list in enumerate(batched(updated_input_data_list, BULK_REQUEST_SIZE)):
                 existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [e.input_data_id for e in batch_updated_input_data_list])
-                partial_func = partial(self._update_input_data_wrapper, project_id=project_id, existing_input_data_dict=existing_input_data_dict)
-                result_list = pool.map(partial_func, enumerate(batch_updated_input_data_list, start=initial_index * BULK_REQUEST_SIZE))
+                partial_func = partial(self._update_input_data_wrapper, project_id=project_id)
+                result_list = list(
+                    executor.map(
+                        isolate_thread_call(partial_func, get_input_data_id=lambda item: item[1].input_data_id, existing_input_data_dict=existing_input_data_dict),
+                        enumerate(batch_updated_input_data_list, start=initial_index * BULK_REQUEST_SIZE),
+                    )
+                )
                 success_count += len([e for e in result_list if e == UpdateResult.SUCCESS])
                 skipped_count += len([e for e in result_list if e == UpdateResult.SKIPPED])
                 failed_count += len([e for e in result_list if e == UpdateResult.FAILED])
@@ -315,7 +321,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）。指定しない場合は、逐次的に処理します。指定する場合は ``--yes`` も一緒に指定する必要があります。",
+        help="並列度。指定しない場合は、逐次的に処理します。指定する場合は ``--yes`` も一緒に指定する必要があります。",
     )
 
     parser.set_defaults(subcommand_func=main)

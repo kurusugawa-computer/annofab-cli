@@ -3,10 +3,9 @@ from __future__ import annotations
 import argparse
 import json
 import logging
-import multiprocessing
 import sys
 import tempfile
-from functools import partial
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +25,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.download import DownloadingFile
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.input_data._parallel import isolate_thread_call
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
@@ -220,21 +220,25 @@ class CopyInputDataMain(CommandLineWithConfirm):
             f"src_project_id='{self.src_project_id}', dest_project_id='{self.dest_project_id}'"
         )
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
                 success_count = 0
                 for initial_index, batch_input_data_id_list in enumerate(batched(input_data_id_list, BULK_REQUEST_SIZE)):
                     src_input_data_dict = get_input_data_dict_in_bulk(self.service, self.src_project_id, batch_input_data_id_list)
                     dest_input_data_dict = get_input_data_dict_in_bulk(self.service, self.dest_project_id, batch_input_data_id_list)
                     src_supplementary_data_dict = get_supplementary_data_dict_in_bulk(self.service, self.src_project_id, batch_input_data_id_list)
                     dest_supplementary_data_dict = get_supplementary_data_dict_in_bulk(self.service, self.dest_project_id, batch_input_data_id_list)
-                    wrapper = partial(
-                        self.copy_input_data_and_supplementary_data_wrapper,
-                        src_input_data_dict=src_input_data_dict,
-                        dest_input_data_dict=dest_input_data_dict,
-                        src_supplementary_data_dict=src_supplementary_data_dict,
-                        dest_supplementary_data_dict=dest_supplementary_data_dict,
+                    wrapper = self.copy_input_data_and_supplementary_data_wrapper
+                    result_bool_list = executor.map(
+                        isolate_thread_call(
+                            wrapper,
+                            get_input_data_id=lambda item: item[1],
+                            src_input_data_dict=src_input_data_dict,
+                            dest_input_data_dict=dest_input_data_dict,
+                            src_supplementary_data_dict=src_supplementary_data_dict,
+                            dest_supplementary_data_dict=dest_supplementary_data_dict,
+                        ),
+                        enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE),
                     )
-                    result_bool_list = pool.map(wrapper, enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE))
                     success_count += len([e for e in result_bool_list if e])
 
         else:
@@ -347,7 +351,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="並列度を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)
