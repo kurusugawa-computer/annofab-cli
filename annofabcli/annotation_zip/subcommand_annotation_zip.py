@@ -12,6 +12,7 @@ from annofabcli.annotation_zip.list_annotation_3d_bounding_box import create_par
 from annofabcli.annotation_zip.list_annotation_3d_segment import create_parser as create_parser_list_annotation_3d_segment
 from annofabcli.annotation_zip.list_annotation_attribute import create_parser as create_parser_list_annotation_attribute
 from annofabcli.annotation_zip.list_annotation_bounding_box_2d import create_parser as create_parser_list_annotation_bounding_box_2d
+from annofabcli.annotation_zip.list_attribute_restriction_violation import create_parser as create_parser_list_attribute_restriction_violation
 from annofabcli.annotation_zip.list_classification_annotation import create_parser as create_parser_list_classification_annotation
 from annofabcli.annotation_zip.list_polygon_annotation import create_parser as create_parser_list_polygon_annotation
 from annofabcli.annotation_zip.list_polyline_annotation import create_parser as create_parser_list_polyline_annotation
@@ -45,6 +46,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     create_parser_list_annotation_3d_bounding_box(subparsers)
     create_parser_list_annotation_3d_segment(subparsers)
     create_parser_list_annotation_attribute(subparsers)
+    create_parser_list_attribute_restriction_violation(subparsers)
     create_parser_list_annotation_bounding_box_2d(subparsers)
     create_parser_list_classification_annotation(subparsers)
     create_parser_list_polygon_annotation(subparsers)

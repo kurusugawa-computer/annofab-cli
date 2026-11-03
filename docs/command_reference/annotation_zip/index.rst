@@ -62,6 +62,7 @@ Available Commands
    list_3d_bounding_box_annotation
    list_3d_segment_annotation
    list_annotation_attribute
+   list_attribute_restriction_violation
    list_bounding_box_annotation
    list_classification_annotation
    list_polygon_annotation

@@ -18,7 +18,6 @@ import annofabcli.annotation.export_annotation
 import annofabcli.annotation.import_annotation
 import annofabcli.annotation.list_annotation
 import annofabcli.annotation.list_annotation_count
-import annofabcli.annotation.list_attribute_restriction_violation
 import annofabcli.annotation.merge_segmentation
 import annofabcli.annotation.normalize_attribute_type
 import annofabcli.annotation.remove_segmentation_overlap
@@ -47,7 +46,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.annotation.export_annotation.create_parser(subparsers)
     annofabcli.annotation.import_annotation.create_parser(subparsers)
     annofabcli.annotation.list_annotation.create_parser(subparsers)
-    annofabcli.annotation.list_attribute_restriction_violation.create_parser(subparsers)
     annofabcli.annotation.list_annotation_count.create_parser(subparsers)
     annofabcli.annotation.merge_segmentation.create_parser(subparsers)
     annofabcli.annotation.normalize_attribute_type.create_parser(subparsers)
