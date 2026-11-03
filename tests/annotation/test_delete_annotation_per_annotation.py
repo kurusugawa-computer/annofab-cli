@@ -121,11 +121,12 @@ def test_failure_does_not_stop_other_tasks_or_lose_completed_counts(service, tmp
     assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
 
 
-def test_http_failure_recounts_partial_deletion_and_keeps_other_inputs(service, caplog):
+@pytest.mark.parametrize("exception_type", [requests.HTTPError, requests.ReadTimeout, requests.ConnectionError])
+def test_request_failure_recounts_partial_deletion_and_keeps_other_inputs(service, caplog, exception_type):
     def delete_annotations(_project_id, *, request_body, query_params):
         assert query_params == {"v": "2"}
         if request_body[0]["input_data_id"] == "input1":
-            raise requests.HTTPError("一部の削除に失敗")
+            raise exception_type("一部の削除に失敗")
 
     service.api.batch_update_annotations.side_effect = delete_annotations
     service.api.get_editor_annotation.return_value = ({"details": [{"annotation_id": "a2"}, {"annotation_id": "keep"}]}, None)

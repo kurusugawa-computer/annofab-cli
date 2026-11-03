@@ -106,9 +106,9 @@ class DeleteAnnotationPerAnnotationMain(CommandLineWithConfirm):
 
             return DeleteResult(deleted=len(filtered_details), failed=len(nonexistent_annotation_ids))
 
-        except requests.HTTPError:
+        except requests.RequestException:
             logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの削除に失敗しました。", exc_info=True)
-            # `batchUpdateAnnotations` APIでエラーになった場合、途中までは削除されるので、`len(annotation_ids)` 件削除に失敗したとは限らない。
+            # HTTPエラーや通信エラーの場合、途中まで削除されている可能性がある。
             # そのため、再度アノテーション情報を取得して、削除できたアノテーション数と削除できなかったアノテーション数を取得する。
             new_editor_annotation, _ = self.service.api.get_editor_annotation(self.project_id, task_id=task_id, input_data_id=input_data_id, query_params={"v": "2"})
             new_annotation_ids = {e["annotation_id"] for e in new_editor_annotation["details"]}
