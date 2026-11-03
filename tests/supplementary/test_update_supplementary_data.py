@@ -1,3 +1,5 @@
+import logging
+import threading
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
@@ -7,6 +9,7 @@ import annofabapi
 import pytest
 
 from annofabcli.supplementary.update_supplementary_data import (
+    UpdatedSupplementaryData,
     UpdateResult,
     UpdateSupplementaryDataMain,
     create_updated_supplementary_data_list_from_csv,
@@ -143,3 +146,36 @@ def test_create_updated_supplementary_data_list_from_csv_without_required_column
 
     with pytest.raises(ValueError):
         create_updated_supplementary_data_list_from_csv(csv_path)
+
+
+def test_thread_update_preserves_result_counts_and_worker_logs(caplog: pytest.LogCaptureFixture) -> None:
+    service, api, wrapper = create_service()
+    barrier = threading.Barrier(2)
+    main_thread_id = threading.get_ident()
+    updated_input_ids: list[str] = []
+
+    def get_supplementary_data(_project_id, input_data_id):
+        assert threading.get_ident() != main_thread_id
+        return None if input_data_id == "missing" else [dict(create_old_supplementary_data(), input_data_id=input_data_id)]
+
+    def put_supplementary_data(_project_id, input_data_id, _supplementary_data_id, *, request_body):
+        assert request_body["supplementary_data_name"] == "new_name"
+        barrier.wait(timeout=10)
+        if input_data_id == "failed":
+            raise RuntimeError("write API failure")
+        updated_input_ids.append(input_data_id)
+
+    wrapper.get_supplementary_data_list_or_none.side_effect = get_supplementary_data
+    api.put_supplementary_data.side_effect = put_supplementary_data
+    command = UpdateSupplementaryDataMain(service, all_yes=True)
+    supplementary_data = [
+        UpdatedSupplementaryData(input_data_id=input_data_id, supplementary_data_id="supplementary1", supplementary_data_name="new_name") for input_data_id in ["input1", "failed", "missing"]
+    ]
+
+    with caplog.at_level(logging.DEBUG):
+        command.update_supplementary_data_list_in_parallel("project1", supplementary_data, parallelism=2)
+
+    assert updated_input_ids == ["input1"]
+    assert "成功: 1件, スキップ: 1件, 失敗: 1件" in caplog.messages[-1]
+    assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
+    assert any(record.levelno == logging.DEBUG and "補助情報を更新しました" in record.message for record in caplog.records)
