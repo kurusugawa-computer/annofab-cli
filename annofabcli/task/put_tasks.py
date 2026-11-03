@@ -3,10 +3,10 @@ from __future__ import annotations
 import argparse
 import functools
 import logging
-import multiprocessing
 import sys
 import tempfile
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
 from pathlib import Path
 
@@ -27,6 +27,7 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.task._parallel import isolate_thread_call
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
@@ -128,11 +129,11 @@ class PuttingTaskMain:
         logger.debug("'put_task' WebAPIを用いてタスクを生成します。")
         success_count = 0
         if self.parallelism is not None:
-            with multiprocessing.Pool(self.parallelism) as p:
+            with ThreadPoolExecutor(max_workers=self.parallelism) as executor:
                 for task_relation_batch in batched(task_relation_dict.items(), BULK_REQUEST_SIZE):
                     existing_task_dict = get_task_dict_in_bulk(self.service, self.project_id, [task_id for task_id, _ in task_relation_batch])
                     wrapper = functools.partial(self.put_task_wrapper, existing_task_dict=existing_task_dict)
-                    results = p.map(wrapper, task_relation_batch)
+                    results = list(executor.map(isolate_thread_call(wrapper), task_relation_batch))
                     success_count += len([e for e in results if e])
         else:
             for task_relation_batch in batched(task_relation_dict.items(), BULK_REQUEST_SIZE):

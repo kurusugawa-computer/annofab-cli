@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import argparse
 import logging
-import multiprocessing
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import partial
 from typing import Any
@@ -24,6 +24,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
+from annofabcli.task._parallel import isolate_thread_call
 
 logger = logging.getLogger(__name__)
 
@@ -163,8 +164,8 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
                 assign_last_acceptor=assign_last_acceptor,
                 task_query=task_query,
             )
-            with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, enumerate(task_id_list))
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                result_bool_list = list(executor.map(isolate_thread_call(partial_func), enumerate(task_id_list)))
                 success_count = len([e for e in result_bool_list if e])
 
         else:
@@ -288,7 +289,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="並列度を指定してください。指定する場合は必ず ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)
