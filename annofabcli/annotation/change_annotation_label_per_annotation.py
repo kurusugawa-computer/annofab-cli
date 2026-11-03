@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import logging
 import sys
 from collections import defaultdict
 from collections.abc import Collection
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, cast
@@ -21,7 +23,17 @@ import annofabcli.common.cli
 from annofabcli.annotation.change_annotation_label import DestLabelInfo, get_label_id_from_name_or_id, is_allowed_label_change
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
-from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE, ArgumentParser, CommandLine, CommandLineWithConfirm, build_annofabapi_resource_and_login, get_json_from_args, get_list_from_args
+from annofabcli.common.cli import (
+    COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
+    ArgumentParser,
+    CommandLine,
+    CommandLineWithConfirm,
+    build_annofabapi_resource_and_login,
+    get_json_from_args,
+    get_list_from_args,
+)
+from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -66,6 +78,9 @@ class ChangeAnnotationLabelCount:
 
     failed: int
     """変更に失敗したアノテーション数。"""
+
+    task_failed: bool = False
+    """タスク処理で例外が発生したか。"""
 
 
 def get_annotation_list_per_task_id_input_data_id(anno_list: list[TargetAnnotationLabel]) -> dict[str, dict[str, list[TargetAnnotationLabel]]]:
@@ -249,16 +264,42 @@ class ChangeAnnotationLabelPerAnnotationMain(CommandLineWithConfirm):
                 failed += len(target_annotations)
         return True, ChangeAnnotationLabelCount(success=succeeded, skipped=skipped, failed=failed)
 
-    def change_annotation_label(self, anno_list: list[TargetAnnotationLabel]) -> None:
-        """アノテーションごとにラベルを変更する。"""
+    def change_annotation_label(self, anno_list: list[TargetAnnotationLabel], *, parallelism: int | None = None) -> None:
+        """タスク単位でアノテーションを変更する。
+
+        Args:
+            anno_list: 各アノテーションの変更内容。
+            parallelism: 同時に処理するタスク数。Noneの場合は逐次処理する。
+
+        Returns:
+            None。
+        """
         annotations_by_task_id = get_annotation_list_per_task_id_input_data_id(anno_list)
         success = 0
         skipped = 0
         failed = 0
         changed_task_count = 0
-        for task_index, (task_id, annotations_by_input_data_id) in enumerate(annotations_by_task_id.items(), start=1):
+
+        def _process_task(task_index_and_items: tuple[int, tuple[str, dict[str, list[TargetAnnotationLabel]]]]) -> tuple[bool, ChangeAnnotationLabelCount]:
+            task_index, (task_id, annotations_by_input_data_id) = task_index_and_items
             logger.info(f"{task_index} / {len(annotations_by_task_id)}件目 :: task_id='{task_id}' のアノテーションラベルを変更します。")
-            is_changeable, count = self.change_annotation_label_for_task(task_id, annotations_by_input_data_id)
+            # 確認状態やAPIクライアントをタスク間で共有しない。
+            try:
+                main_obj = copy.deepcopy(self) if parallelism is not None else self
+                return main_obj.change_annotation_label_for_task(task_id, annotations_by_input_data_id)
+            except Exception:
+                logger.warning(f"task_id='{task_id}' :: タスクの処理に失敗しました。", exc_info=True)
+                annotation_count = sum(len(items) for items in annotations_by_input_data_id.values())
+                return (False, ChangeAnnotationLabelCount(success=0, skipped=0, failed=annotation_count, task_failed=True))
+
+        task_items = enumerate(annotations_by_task_id.items(), start=1)
+        if parallelism is None:
+            results = [_process_task(item) for item in task_items]
+        else:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                results = list(executor.map(_process_task, task_items))
+
+        for is_changeable, count in results:
             success += count.success
             skipped += count.skipped
             failed += count.failed
@@ -270,6 +311,10 @@ class ChangeAnnotationLabelPerAnnotationMain(CommandLineWithConfirm):
             f"スキップしたアノテーション数は{skipped}件、失敗したアノテーション数は{failed}件です。"
         )
 
+        failed_task_count = sum(count.task_failed or count.failed > 0 for _, count in results)
+        if failed_task_count:
+            raise AnnofabCliException(f"{failed_task_count} 件のタスクの処理に失敗しました。")
+
 
 class ChangeLabelPerAnnotation(CommandLine):
     """アノテーションごとにラベルを個別変更する。"""
@@ -278,6 +323,12 @@ class ChangeLabelPerAnnotation(CommandLine):
 
     def main(self) -> None:
         args = self.args
+        if args.parallelism is not None and not args.yes:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
         try:
             input_annotation_list = parse_target_annotation_list(args.json, args.csv)
         except Exception as e:
@@ -319,7 +370,7 @@ class ChangeLabelPerAnnotation(CommandLine):
         except ValueError as e:
             print(f"{self.COMMON_MESSAGE} argument '--json' または '--csv' の値が不正です。 :: {e}", file=sys.stderr)  # noqa: T201
             sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-        main_obj.change_annotation_label(target_annotation_list)
+        main_obj.change_annotation_label(target_annotation_list, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -357,6 +408,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="保留中状態のタスクに含まれるアノテーションも変更します。未指定の場合、保留中状態のタスクはスキップされます。",
     )
     parser.add_argument("--backup", type=Path, required=False, help="アノテーションのバックアップを保存するディレクトリのパス。アノテーションの復元は ``annotation restore`` コマンドで実現できます。")
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        choices=PARALLELISM_CHOICES,
+        help="並列に処理するタスク数。指定しない場合は逐次処理します。指定した場合は、``--yes`` も指定してください。",
+    )
     parser.set_defaults(subcommand_func=main)
 
 
