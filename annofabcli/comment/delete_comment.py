@@ -165,7 +165,11 @@ class DeleteCommentMain(CommandLineWithConfirm):
         tpl: tuple[int, tuple[str, DeletedCommentsForTask]],
     ) -> int:
         task_index, (task_id, comment_ids_for_task) = tpl
-        return self.delete_comments_for_task(task_id=task_id, comment_ids_for_task=comment_ids_for_task, task_index=task_index)
+        try:
+            return self.delete_comments_for_task(task_id=task_id, comment_ids_for_task=comment_ids_for_task, task_index=task_index)
+        except Exception:
+            logger.warning(f"task_id='{task_id}' :: コメントの削除に失敗しました。", exc_info=True)
+            return 0
 
     def delete_comments_for_task_list(
         self,
