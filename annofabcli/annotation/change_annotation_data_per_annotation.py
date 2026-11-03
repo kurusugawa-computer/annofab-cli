@@ -306,6 +306,9 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
         Returns:
             None。
         """
+        if parallelism is not None and any(annotation.attributes is not None for annotation in anno_list):
+            self.get_annotation_specs()
+
         changed_task_count = 0
         total_failed_count = 0
         total_success_count = 0

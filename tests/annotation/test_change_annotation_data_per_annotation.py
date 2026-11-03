@@ -373,7 +373,8 @@ def test_backup_confirmation_controls_subsequent_task_confirmation(
 
 
 @pytest.mark.parametrize("parallelism", [None, 2])
-def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path, caplog: pytest.LogCaptureFixture, parallelism: int | None) -> None:
+@pytest.mark.parametrize("attributes", [None, {}])
+def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path, caplog: pytest.LogCaptureFixture, parallelism: int | None, attributes: dict | None) -> None:
     service = Mock()
     barrier = Barrier(2)
     updates: list[tuple[str, str]] = []
@@ -411,10 +412,10 @@ def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path,
     service.wrapper.get_task_or_none.side_effect = get_task
     service.api.get_editor_annotations_in_bulk.side_effect = get_annotations
     service.api.put_annotation.side_effect = update
-    service.api.get_annotation_specs.return_value = ({"additionals": []}, None)
+    service.api.get_annotation_specs.return_value = ({"additionals": [], "labels": [{"label_id": "label_car", "additional_data_definitions": []}]}, None)
     main_obj = ChangeAnnotationDataPerAnnotationMain(service, project_id="project1", include_complete_task=False, include_on_hold_task=False, all_yes=True, backup_dir=tmp_path)
     items = [
-        TargetAnnotationData(task_id=task_id, input_data_id=input_id, annotation_id="annotation1", data={"_type": "Range", "begin": 10, "end": 20})
+        TargetAnnotationData(task_id=task_id, input_data_id=input_id, annotation_id="annotation1", data={"_type": "Range", "begin": 10, "end": 20}, attributes=attributes)
         for task_id, input_id in [("task1", "input1"), ("task1", "input2"), ("task2", "input1"), ("complete", "input1")]
     ]
 
@@ -426,6 +427,7 @@ def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path,
     assert not (tmp_path / "complete").exists()
     assert "タスクが完了状態" in caplog.text
     assert "3/4" in caplog.messages[-1]
+    assert service.api.get_annotation_specs.call_count == (0 if attributes is None else 1)
 
 
 def test_parallelism_requires_yes_before_accessing_api() -> None:
