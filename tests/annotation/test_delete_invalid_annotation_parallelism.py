@@ -75,7 +75,7 @@ def record_update(output_dir: Path, _project_id: str, *_args, request_body: dict
 @pytest.mark.parametrize("parallelism", [None, 2])
 @pytest.mark.parametrize("command", ["attribute", "label"])
 def test_multiple_tasks_preserve_backup_skip_and_continue_after_failure(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture, parallelism, command):
-    # 実際のプロセスプールで実行し、API境界だけを置き換える。
+    # 実際のスレッドプールで実行し、API境界だけを置き換える。
     service = annofabapi.build(pat="test")
     monkeypatch.setattr(service.api, "get_project", get_project)
     monkeypatch.setattr(service.wrapper, "get_task_or_none", get_task)
@@ -104,6 +104,8 @@ def test_multiple_tasks_preserve_backup_skip_and_continue_after_failure(tmp_path
             assert update["details"][0]["additional_data_list"] == []
         else:
             assert update[0]["_type"] == "Delete"
+    assert "タスクが完了状態のため、スキップします。" in caplog.text
+    assert any(record.levelno == logging.WARNING and record.exc_info is not None and "failed" in record.message for record in caplog.records)
     assert "2 / 4 件のタスク" in caplog.text
     assert "2 件" in caplog.messages[-1]
 

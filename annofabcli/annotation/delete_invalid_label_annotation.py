@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import functools
 import logging
-import multiprocessing
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -208,6 +209,7 @@ class DeleteInvalidLabelAnnotationMain(CommandLineWithConfirm):
         *,
         existing_label_ids: set[str],
         backup_dir: Path | None = None,
+        copy_service: bool = False,
     ) -> tuple[bool, int]:
         """タスクごとの処理を実行し、失敗してもほかのタスクの処理を継続する。
 
@@ -215,13 +217,24 @@ class DeleteInvalidLabelAnnotationMain(CommandLineWithConfirm):
             task_index_and_id: 処理対象タスクのインデックスとタスクID。
             existing_label_ids: アノテーション仕様に存在するラベルIDの集合。
             backup_dir: バックアップディレクトリ。
+            copy_service: 並列処理でAPIクライアントを共有しないために複製するかどうか。
 
         Returns:
             更新処理を実行したかどうかと、削除したアノテーション数。
         """
         task_index, task_id = task_index_and_id
         try:
-            return self.delete_invalid_label_annotation_for_task(
+            main_obj = (
+                DeleteInvalidLabelAnnotationMain(
+                    copy.deepcopy(self.service),
+                    project_id=self.project_id,
+                    include_complete_task=self.include_complete_task,
+                    all_yes=self.all_yes,
+                )
+                if copy_service
+                else self
+            )
+            return main_obj.delete_invalid_label_annotation_for_task(
                 task_id,
                 existing_label_ids=existing_label_ids,
                 backup_dir=backup_dir,
@@ -263,10 +276,11 @@ class DeleteInvalidLabelAnnotationMain(CommandLineWithConfirm):
             self.delete_invalid_label_annotation_for_task_wrapper,
             existing_label_ids=existing_label_ids,
             backup_dir=backup_dir,
+            copy_service=parallelism is not None,
         )
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
-                results = pool.map(func, enumerate(task_id_list))
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                results = list(executor.map(func, enumerate(task_id_list)))
         else:
             results = [func(item) for item in enumerate(task_id_list)]
 
