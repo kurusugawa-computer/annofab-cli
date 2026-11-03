@@ -572,15 +572,19 @@ class PutCommentMain(CommandLineWithConfirm):
         include_on_hold_task: bool = False,
     ) -> tuple[int, int]:
         task_index, (task_id, comments_for_task) = tpl
-        return self.add_comments_for_task(
-            task_id=task_id,
-            comments_for_task=comments_for_task,
-            task_index=task_index,
-            put_mode=put_mode,
-            cancel_acceptance=cancel_acceptance,
-            include_break_task=include_break_task,
-            include_on_hold_task=include_on_hold_task,
-        )
+        try:
+            return self.add_comments_for_task(
+                task_id=task_id,
+                comments_for_task=comments_for_task,
+                task_index=task_index,
+                put_mode=put_mode,
+                cancel_acceptance=cancel_acceptance,
+                include_break_task=include_break_task,
+                include_on_hold_task=include_on_hold_task,
+            )
+        except Exception:
+            logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
+            return (0, 0)
 
     def add_comments_for_task_list(
         self,
