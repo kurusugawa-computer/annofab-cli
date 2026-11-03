@@ -86,6 +86,17 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/
 ## オプションの変更
 * 動画プロジェクトの場合は、`annotation_specs update_option`で`{"can_overwrap": false}`を指定すべきかを検討してください。
 
+## ラベルの削除
+すでにアノテーションで利用されているラベルを削除すると、アノテーションエディタ画面では「存在しないラベルを参照している」という旨のエラーが表示されます。
+それを解消するには、アノテーションエディタ画面でアノテーションを保存するか、`annotation delete_invalid_label_annotation`の実行が必要です。
+その旨をユーザーに伝えて、必要ならば`annotation delete_invalid_label_annotation`の実行をユーザーに提案してください。
+
+## 属性の削除
+すでにアノテーションで利用されている属性を削除すると、アノテーションエディタ画面では「存在しない属性を参照している」という旨のエラーが表示されます。
+それを解消するには、アノテーションエディタ画面でアノテーションを保存するか、`annotation delete_invalid_attribute_value`の実行が必要です。
+その旨をユーザーに伝えて、必要ならば`annotation delete_invalid_attribute_value`の実行をユーザーに提案してください。
+
+
 ## アノテーション仕様のチェック
 ユーザーから指定された「アノテーションルール」と「レビュー観点」に基づいてレビューしてください。
 
