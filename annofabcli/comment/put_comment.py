@@ -4,9 +4,9 @@ import copy
 import functools
 import json
 import logging
-import multiprocessing
 import uuid
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -75,8 +75,8 @@ keyはtask_id
 def _create_added_comments_for_task() -> AddedCommentsForTask:
     """タスク配下のコメント一覧を作成する。
 
-    multiprocessing.Poolで子プロセスへ渡す際にpickleできるよう、
-    default_factoryにはlambdaではなくモジュール直下の名前付き関数を使用する。
+    Returns:
+        入力データIDをキーとし、コメントのリストを値とする辞書。
     """
     return defaultdict(list)
 
@@ -572,15 +572,19 @@ class PutCommentMain(CommandLineWithConfirm):
         include_on_hold_task: bool = False,
     ) -> tuple[int, int]:
         task_index, (task_id, comments_for_task) = tpl
-        return self.add_comments_for_task(
-            task_id=task_id,
-            comments_for_task=comments_for_task,
-            task_index=task_index,
-            put_mode=put_mode,
-            cancel_acceptance=cancel_acceptance,
-            include_break_task=include_break_task,
-            include_on_hold_task=include_on_hold_task,
-        )
+        try:
+            return self.add_comments_for_task(
+                task_id=task_id,
+                comments_for_task=comments_for_task,
+                task_index=task_index,
+                put_mode=put_mode,
+                cancel_acceptance=cancel_acceptance,
+                include_break_task=include_break_task,
+                include_on_hold_task=include_on_hold_task,
+            )
+        except Exception:
+            logger.warning(f"task_id='{task_id}' :: コメントの付与に失敗しました。", exc_info=True)
+            return (0, 0)
 
     def add_comments_for_task_list(
         self,
@@ -607,8 +611,8 @@ class PutCommentMain(CommandLineWithConfirm):
                 include_break_task=include_break_task,
                 include_on_hold_task=include_on_hold_task,
             )
-            with multiprocessing.Pool(parallelism) as pool:
-                result_list = pool.map(func, enumerate(comments_for_task_list.items()))
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                result_list = list(executor.map(func, enumerate(comments_for_task_list.items())))
                 added_input_data_count = sum(e[0] for e in result_list)
                 added_comment_count = sum(e[1] for e in result_list)
                 succeeded_tasks_count = sum(1 for e in result_list if e[0] > 0)

@@ -1,8 +1,8 @@
 import argparse
 import json
 import logging
-import multiprocessing
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import annofabapi
@@ -165,7 +165,11 @@ class DeleteCommentMain(CommandLineWithConfirm):
         tpl: tuple[int, tuple[str, DeletedCommentsForTask]],
     ) -> int:
         task_index, (task_id, comment_ids_for_task) = tpl
-        return self.delete_comments_for_task(task_id=task_id, comment_ids_for_task=comment_ids_for_task, task_index=task_index)
+        try:
+            return self.delete_comments_for_task(task_id=task_id, comment_ids_for_task=comment_ids_for_task, task_index=task_index)
+        except Exception:
+            logger.warning(f"task_id='{task_id}' :: コメントの削除に失敗しました。", exc_info=True)
+            return 0
 
     def delete_comments_for_task_list(
         self,
@@ -176,8 +180,8 @@ class DeleteCommentMain(CommandLineWithConfirm):
         logger.info(f"削除対象のコメントを含むタスクの個数: {len(comment_ids_for_task_list)}, 削除対象のコメントを含む入力データ数: {comments_count}")
 
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(self.delete_comments_for_task_wrapper, enumerate(comment_ids_for_task_list.items()))
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                result_bool_list = executor.map(self.delete_comments_for_task_wrapper, enumerate(comment_ids_for_task_list.items()))
                 added_comments_count = sum(e for e in result_bool_list)
 
         else:
@@ -252,7 +256,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定してください。指定する場合は'--yes' を指定してください。指定しない場合は、逐次的に処理します。",
+        help="並列度を指定してください。指定する場合は'--yes' を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)
