@@ -1,5 +1,9 @@
 import argparse
 import logging
+from collections import Counter
+from concurrent.futures import ThreadPoolExecutor
+from enum import Enum, auto
+from functools import partial
 from typing import Any
 
 import annofabapi
@@ -8,10 +12,22 @@ from annofabapi.models import OrganizationMember, Project, ProjectMemberRole, Pr
 from more_itertools import first_true
 
 import annofabcli.common.cli
-from annofabcli.common.cli import CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.cli import PARALLELISM_CHOICES, CommandLine, build_annofabapi_resource_and_login
+from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
+
+
+class ChangeStatusResult(Enum):
+    """1件のプロジェクトのステータス変更結果。"""
+
+    SUCCESS = auto()
+    """変更に成功した。"""
+    SKIPPED = auto()
+    """対象外、権限不足、状態の競合などによりスキップした。"""
+    FAILED = auto()
+    """変更に失敗した。"""
 
 
 class ChanegProjectStatusMain:
@@ -90,21 +106,80 @@ class ChanegProjectStatusMain:
     def change_status_for_project(self, project_id: str, status: ProjectStatus, force_suspend: bool = False) -> bool:  # noqa: FBT001, FBT002
         project = self.service.wrapper.get_project_or_none(project_id)
         if project is None:
-            logger.warning(f"project_id={project_id} のプロジェクトは存在しないので、スキップします。")
+            logger.warning(f"project_id='{project_id}'のプロジェクトは存在しないので、スキップします。")
             return False
 
         if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
-            logger.warning(f"project_id={project_id}: オーナロールでないため、プロジェクトのステータスを変更できません。project_title={project['title']}")
+            logger.warning(f"project_id='{project_id}': オーナロールでないため、プロジェクトのステータスを変更できません。project_title='{project['title']}'")
             return False
 
-        logger.debug(f"{project['title']} のステータスを{status.value} に変更します。project_id={project_id}")
+        logger.debug(f"'{project['title']}'のステータスを'{status.value}'に変更します。project_id='{project_id}'")
         project["status"] = status.value
         project["last_updated_datetime"] = project["updated_datetime"]
         project["force_suspend"] = force_suspend
         self.service.api.put_project(project_id, request_body=project)
         return True
 
-    def change_status_for_project_list(self, project_id_list: list[str], status: ProjectStatus, force_suspend: bool = False) -> None:  # noqa: FBT001, FBT002
+    def _change_status_for_project_wrapper(self, project_id: str, *, status: ProjectStatus, force_suspend: bool) -> ChangeStatusResult:
+        """1件のステータス変更結果を返し、例外をログに記録する。
+
+        Args:
+            project_id: 対象のプロジェクトID。
+            status: 変更後のステータス。
+            force_suspend: 作業中タスクがある場合も停止するかどうか。
+
+        Returns:
+            成功、スキップ、失敗のいずれか。
+        """
+        try:
+            return ChangeStatusResult.SUCCESS if self.change_status_for_project(project_id, status=status, force_suspend=force_suspend) else ChangeStatusResult.SKIPPED
+        except Exception as e:
+            logger.warning(f"project_id='{project_id}'のステータスを'{status.value}'に変更できませんでした。", exc_info=True)
+            if isinstance(e, requests.HTTPError) and e.response is not None and e.response.status_code == requests.codes.conflict:
+                return ChangeStatusResult.SKIPPED
+            return ChangeStatusResult.FAILED
+
+    def _change_status_for_project_list_in_parallel(self, project_id_list: list[str], status: ProjectStatus, *, force_suspend: bool, parallelism: int) -> None:
+        """重複IDを除去して並列実行し、全件の結果を集計する。
+
+        Args:
+            project_id_list: 対象のプロジェクトID一覧。
+            status: 変更後のステータス。
+            force_suspend: 作業中タスクがある場合も停止するかどうか。
+            parallelism: 並列度。
+
+        Returns:
+            None。
+
+        Raises:
+            AnnofabCliException: 409以外のエラーで失敗した処理がある場合。
+        """
+        project_ids = list(dict.fromkeys(project_id_list))
+        total_count = len(project_ids)
+        logger.info(f"{total_count} 件のプロジェクトのステータスを'{status.value}'に変更します。{parallelism}個のスレッドを使用して並列実行します。")
+        worker = partial(self._change_status_for_project_wrapper, status=status, force_suspend=force_suspend)
+        result_counts: Counter[ChangeStatusResult] = Counter()
+        with ThreadPoolExecutor(max_workers=parallelism) as executor:
+            for processed_count, result in enumerate(executor.map(worker, project_ids), start=1):
+                result_counts[result] += 1
+                if processed_count % 100 == 0 or processed_count == total_count:
+                    logger.info(f"{processed_count} / {total_count} 件のプロジェクトのステータス変更を処理しました。")
+
+        success_count = result_counts[ChangeStatusResult.SUCCESS]
+        skipped_count = result_counts[ChangeStatusResult.SKIPPED]
+        failed_count = result_counts[ChangeStatusResult.FAILED]
+        logger.info(f"{success_count} / {total_count} 件のプロジェクトのステータスを'{status.value}'に変更しました。（成功: {success_count}件, スキップ: {skipped_count}件, 失敗: {failed_count}件）")
+        if failed_count:
+            raise AnnofabCliException(f"{failed_count} 件のプロジェクトのステータス変更に失敗しました。")
+
+    def change_status_for_project_list(
+        self,
+        project_id_list: list[str],
+        status: ProjectStatus,
+        force_suspend: bool = False,  # noqa: FBT001, FBT002
+        *,
+        parallelism: int | None = None,
+    ) -> None:
         """
         複数のプロジェクトに対して、プロジェクトのステータスを変更する。
 
@@ -112,10 +187,16 @@ class ChanegProjectStatusMain:
             project_id_list:
             status: 変更後のステータス
             force_suspend: Trueなら作業中タスクがある状態でも停止中にする。
+            parallelism: 並列度。Noneの場合は逐次実行する。
 
         Returns:
+            None。
 
         """
+        if parallelism is not None:
+            self._change_status_for_project_list_in_parallel(project_id_list, status, force_suspend=force_suspend, parallelism=parallelism)
+            return
+
         logger.info(f"{len(project_id_list)} 件のプロジェクトのステータスを {status.value} に変更します。")
         success_count = 0
         for project_id in project_id_list:
@@ -143,6 +224,7 @@ class ChangeProjectStatus(CommandLine):
             project_id_list=project_id_list,
             status=ProjectStatus(args.status),
             force_suspend=args.suspend_with_working_tasks,
+            parallelism=args.parallelism,
         )
 
 
@@ -179,6 +261,13 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--suspend_with_working_tasks",
         action="store_true",
         help=f"`--status {ProjectStatus.SUSPENDED.value}`を指定している状態で、 ``--suspend_with_working_tasks`` を指定した場合、作業中タスクが残っていても停止状態に変更します。",
+    )
+
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        choices=PARALLELISM_CHOICES,
+        help="並列度。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)
