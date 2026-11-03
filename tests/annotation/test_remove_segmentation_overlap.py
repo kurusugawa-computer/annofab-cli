@@ -1,12 +1,14 @@
 import io
 import json
+import logging
+import threading
 from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
 import pytest
 from annofabapi.parser import lazy_parse_simple_annotation_dir_by_task
-from annofabapi.segmentation import write_binary_image
+from annofabapi.segmentation import read_binary_image, write_binary_image
 
 from annofabcli.annotation.remove_segmentation_overlap import RemoveSegmentationOverlapMain, remove_overlap_of_binary_image_array
 from annofabcli.annotation.restore_annotation import RestoreAnnotationMain
@@ -82,6 +84,66 @@ def create_main_obj(service: Mock, backup_dir: Path | None) -> RemoveSegmentatio
         include_on_hold_task=False,
         backup_dir=backup_dir,
     )
+
+
+@pytest.mark.parametrize("with_backup", [True, False])
+def test_thread_overlap_removal_preserves_images_backups_counts_and_worker_logs(tmp_path, segmentation_annotation, with_backup, caplog):
+    service, annotation, images = segmentation_annotation
+    barrier = threading.Barrier(2)
+    main_thread_id = threading.get_ident()
+    looked_up = []
+    uploaded_images = []
+
+    def get_task(*, project_id, task_id):
+        assert project_id == "prj1"
+        assert threading.get_ident() != main_thread_id
+        looked_up.append(task_id)
+        if task_id in {"task1", "task2"}:
+            barrier.wait(timeout=10)
+        if task_id == "task2":
+            raise RuntimeError("タスク取得に失敗")
+        return {"status": "not_started", "account_id": None, "input_data_id_list": ["input1"]}
+
+    def get_annotations(project_id, task_id, *, query_params):
+        assert project_id == "prj1"
+        assert query_params["input_data_id"] == "input1"
+        return {"success": [annotation | {"task_id": task_id}], "failure": []}, None
+
+    def upload_image(project_id, *, data, content_type):
+        assert project_id == "prj1"
+        assert content_type == "image/png"
+        uploaded_images.append(read_binary_image(data))
+        return "uploaded/image.png"
+
+    service.wrapper.get_task_or_none.side_effect = get_task
+    service.api.get_editor_annotations_in_bulk.side_effect = get_annotations
+    service.wrapper.upload_data_to_s3.side_effect = upload_image
+    backup_dir = tmp_path / "backup"
+    command = create_main_obj(service, backup_dir if with_backup else None)
+
+    with caplog.at_level(logging.DEBUG):
+        command.main(["task1", "task2", "task3"], parallelism=2)
+
+    assert sorted(looked_up) == ["task1", "task2", "task3"]
+    assert len(uploaded_images) == 2
+    for pixels in uploaded_images:
+        np.testing.assert_array_equal(pixels, np.array([[False, True], [False, False]], dtype=bool))
+    requests = {call.args[1]: call.kwargs["request_body"] for call in service.api.put_annotation.call_args_list}
+    assert set(requests) == {"task1", "task3"}
+    for task_id, request in requests.items():
+        assert request["task_id"] == task_id
+        assert [detail["annotation_id"] for detail in request["details"]] == ["a1", "a2"]
+        assert request["details"][0]["body"] is None
+        assert request["details"][1]["body"]["path"] == "uploaded/image.png"
+        if with_backup:
+            assert json.loads((backup_dir / task_id / "input1.json").read_text()) == annotation | {"task_id": task_id}
+            for detail in annotation["details"]:
+                assert (backup_dir / task_id / "input1" / detail["annotation_id"]).read_bytes() == images[detail["body"]["url"]]
+    if not with_backup:
+        assert not backup_dir.exists()
+    assert "入力データ 2 件" in caplog.messages[-1]
+    assert any(record.levelno == logging.WARNING and record.exc_info and record.thread != main_thread_id for record in caplog.records)
+    assert any(record.levelno == logging.DEBUG and "更新しました" in record.message and record.thread != main_thread_id for record in caplog.records)
 
 
 @pytest.mark.parametrize("with_backup", [True, False])

@@ -3,10 +3,10 @@ from __future__ import annotations
 import argparse
 import copy
 import logging
-import multiprocessing
 import sys
 import tempfile
 from collections.abc import Collection
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -292,9 +292,8 @@ class MergeSegmentationMain(CommandLineWithConfirm):
         logger.info(f"{len(task_ids)} 件のタスクに対して、複数の塗りつぶしアノテーションを1個にまとめます。")
         success_input_data_count = 0
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
-                result_count_list = pool.map(self.update_segmentation_annotation_for_task_wrapper, enumerate(task_ids))
-                success_input_data_count = sum(result_count_list)
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                success_input_data_count = sum(executor.map(self.update_segmentation_annotation_for_task_wrapper, enumerate(task_ids)))
 
         else:
             for task_index, task_id in enumerate(task_ids):
