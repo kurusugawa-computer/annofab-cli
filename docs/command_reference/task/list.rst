@@ -68,11 +68,25 @@ task_idに ``sample`` を含むタスクの一覧を出力します。大文字�
 
     $ annofabcli task list --project_id prj1 --task_query '{"previous_user_id": "user1"}'
 
-metadataの ``priority`` が ``5`` であるタスク一覧を出力します。
+メタデータで絞り込む
+----------------------------------------------
+
+``--task_query`` の ``metadata`` キーに検索式を文字列で指定します。
+メタデータの ``priority`` が数値の ``5`` であるタスク一覧を出力する例です。
 
 .. code-block::
 
     $ annofabcli task list --project_id prj1 --task_query '{"metadata": "priority:5"}'
+
+複数の条件は半角スペースで区切ります。
+メタデータの ``priority`` が数値の ``1`` 以上、かつ ``assignable`` が真偽値の ``true`` であるタスク一覧を出力する例です。
+
+.. code-block::
+
+    $ annofabcli task list --project_id prj1 \
+     --task_query '{"metadata": "priority:>=1 assignable:true"}'
+
+否定や数値比較など、検索式の詳細は :ref:`task_query_metadata` を参照してください。
 
 
 タスクの担当者で絞り込む

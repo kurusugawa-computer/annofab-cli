@@ -171,6 +171,56 @@ Command line options
     {"no_user": true}
 
 
+.. _task_query_metadata:
+
+メタデータによる絞り込み
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``task list`` と ``task list_added_task_history`` では、``--task_query`` の ``metadata`` キーに検索式を指定して、タスクのメタデータで絞り込めます。
+``metadata`` キーは、すべてのコマンドで利用できるわけではありません。
+検索式の仕様は、公開APIドキュメントの `getTasks <https://annofab.com/docs/api/#operation/getTasks>`_ の ``metadata`` クエリパラメータを参照してください。
+
+``metadata`` の値には、オブジェクトではなく ``キー:値`` 形式の文字列を指定します。
+以下は、``priority`` が数値、``assignable`` が真偽値として登録されている場合の例です。
+
+.. list-table:: メタデータの検索式
+   :header-rows: 1
+
+   * - 検索式
+     - 絞り込み条件
+   * - ``priority:5``
+     - priorityが5
+   * - ``-priority:5``
+     - priorityが5以外
+   * - ``priority:>1``
+     - priorityが1より大きい
+   * - ``priority:>=1``
+     - priorityが1以上
+   * - ``priority:<100``
+     - priorityが100未満
+   * - ``priority:<=100``
+     - priorityが100以下
+   * - ``priority:>=1 priority:<=100``
+     - priorityが1以上100以下
+   * - ``priority:>=1 assignable:true``
+     - priorityが1以上、かつassignableがtrue
+
+複数の条件は半角スペースで区切り、すべての条件に一致するタスクを検索します。
+以下のように、検索式全体をJSONの文字列として指定してください。
+
+.. code-block:: bash
+
+    $ annofabcli task list --project_id prj1 \
+     --task_query '{"metadata": "priority:>=1 assignable:true"}'
+
+フェーズやステータスの条件とも組み合わせられます。
+
+.. code-block:: bash
+
+    $ annofabcli task list --project_id prj1 \
+     --task_query '{"phase": "annotation", "status": "not_started", "metadata": "priority:>=1"}'
+
+
 --input_data_query / -iq
 ------------------------------------
 入力データを絞り込む条件をJSON形式で指定します。
