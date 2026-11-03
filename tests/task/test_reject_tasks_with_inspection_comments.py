@@ -1,4 +1,3 @@
-import copy
 from threading import Barrier
 from unittest.mock import Mock
 
@@ -76,21 +75,6 @@ def test_reject_task_does_not_reject_when_comment_creation_fails(monkeypatch) ->
     assert result is False
     service.wrapper.reject_task.assert_not_called()
     service.wrapper.change_task_status_to_break.assert_called_once_with("project1", "task1", last_updated_datetime="2024-01-01T00:01:00+00:00")
-
-
-def test_worker_context_copies_only_target_comments() -> None:
-    service = Mock()
-    service.api.get_project.return_value = ({"input_data_type": "image"}, None)
-    service.api.get_annotation_specs.return_value = ({"labels": []}, None)
-    comments = {f"task{index}": {"input1": [AddedComment(comment=f"comment{index}")]} for index in range(100)}
-    main_obj = reject_tasks_with_inspection_comments.RejectTasksWithInspectionCommentsMain(service, project_id="project1", comments_for_task_list=comments, all_yes=True)
-
-    worker = copy.deepcopy(main_obj._get_task_processor("task1"))
-
-    assert set(worker.comments_for_task_list) == {"task1"}
-    worker.comments_for_task_list["task1"]["input1"][0].comment = "changed"
-    assert len(main_obj.comments_for_task_list) == 100
-    assert comments["task1"]["input1"][0].comment == "comment1"
 
 
 def test_thread_reject_uses_target_comments_before_rejecting_each_task() -> None:

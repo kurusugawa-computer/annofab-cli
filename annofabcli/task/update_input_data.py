@@ -28,7 +28,6 @@ from annofabcli.common.cli import (
     get_json_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.task._parallel import isolate_thread_call
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
@@ -343,7 +342,7 @@ class UpdateTaskInputDataMain(CommandLineWithConfirm):
                     indexed_update_info_list = list(enumerate(update_info_batch, start=initial_index * BULK_REQUEST_SIZE + 1))
                     for index, result in zip(
                         range(initial_index * BULK_REQUEST_SIZE + 1, initial_index * BULK_REQUEST_SIZE + len(update_info_batch) + 1),
-                        executor.map(isolate_thread_call(wrapper), indexed_update_info_list),
+                        executor.map(wrapper, indexed_update_info_list),
                         strict=True,
                     ):
                         result_counter[result] += 1
