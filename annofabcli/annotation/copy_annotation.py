@@ -4,9 +4,9 @@ import argparse
 import copy
 import functools
 import logging
-import multiprocessing
 import sys
 from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any
 
@@ -343,12 +343,12 @@ class CopyAnnotationMain(CommandLineWithConfirm):
     def copy_annotations(self, copy_target_list: list[CopyTarget], *, parallelism: int | None = None) -> None:
         success_count = 0
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
                 for copy_target_batch in batched(copy_target_list, BULK_REQUEST_SIZE):
                     task_id_list = [task_id for target in copy_target_batch for task_id in (target.src_task_id, target.dest_task_id)]
                     task_dict = get_task_dict_in_bulk(self.service, self.project_id, task_id_list)
                     wrapper = functools.partial(self.copy_annotation_wrapper, task_dict=task_dict)
-                    result_bool_list = pool.map(wrapper, copy_target_batch)
+                    result_bool_list = list(executor.map(wrapper, copy_target_batch))
                     success_count += len([e for e in result_bool_list if e])
 
         else:

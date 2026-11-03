@@ -67,8 +67,9 @@ def make_main(service: Mock) -> CreateClassificationAnnotationMain:
 
 
 @pytest.mark.parametrize("attributes", [None, {}, {"sunny": True}, {"sunny": False}, {"sunny": None}])
-def test_main__新規作成する各入力データに属性値を設定する(service: Mock, attributes):
-    make_main(service).main(["task1"], ["weather"], attributes=attributes)
+@pytest.mark.parametrize("parallelism", [None, 2])
+def test_main__新規作成する各入力データに属性値を設定する(service: Mock, attributes, parallelism: int | None):
+    make_main(service).main(["task1"], ["weather"], attributes=attributes, parallelism=parallelism)
 
     calls = service.api.put_annotation.call_args_list
     assert len(calls) == 2

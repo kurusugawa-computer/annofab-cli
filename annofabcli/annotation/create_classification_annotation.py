@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import argparse
 import logging
-import multiprocessing
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import annofabapi
@@ -329,9 +329,9 @@ class CreateClassificationAnnotationMain(CommandLineWithConfirm):
         success_count = 0
 
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
                 task_args = [(task_index, task_id, labels) for task_index, task_id in enumerate(task_ids)]
-                result_bool_list = pool.map(self.execute_task_wrapper, task_args)
+                result_bool_list = list(executor.map(self.execute_task_wrapper, task_args))
                 success_count = len([e for e in result_bool_list if e])
         else:
             for task_index, task_id in enumerate(task_ids):

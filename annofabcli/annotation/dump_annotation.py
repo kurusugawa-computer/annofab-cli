@@ -4,7 +4,7 @@ import argparse
 import functools
 import json
 import logging
-import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -145,7 +145,7 @@ class DumpAnnotationMain:
         success_count = 0
 
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
                 for initial_index, task_id_batch in enumerate(batched(task_id_list, BULK_REQUEST_SIZE)):
                     task_dict = get_task_dict_in_bulk(self.service, self.project_id, task_id_batch)
                     func = functools.partial(
@@ -155,7 +155,7 @@ class DumpAnnotationMain:
                         task_history_id=task_history_id,
                         output_dir=output_dir,
                     )
-                    result_bool_list = pool.map(func, enumerate(task_id_batch, start=initial_index * BULK_REQUEST_SIZE))
+                    result_bool_list = list(executor.map(func, enumerate(task_id_batch, start=initial_index * BULK_REQUEST_SIZE)))
                     success_count += len([e for e in result_bool_list if e])
 
         else:

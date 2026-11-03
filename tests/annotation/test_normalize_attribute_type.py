@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import copy
 import logging
 from pathlib import Path
@@ -9,7 +10,33 @@ from unittest.mock import Mock
 import annofabapi
 import pytest
 
-from annofabcli.annotation.normalize_attribute_type import NormalizeAttributeTypeMain, create_normalized_request, normalize_attribute_value
+from annofabcli.annotation.normalize_attribute_type import NormalizeAttributeType, NormalizeAttributeTypeMain, create_normalized_request, normalize_attribute_value
+from annofabcli.common.exceptions import AnnofabCliException
+from annofabcli.common.facade import AnnofabApiFacade
+
+
+def test_thread_normalization_reports_failed_tasks_after_processing_all_tasks(threaded_task_lookup, caplog: pytest.LogCaptureFixture) -> None:
+    service, looked_up = threaded_task_lookup
+    args = argparse.Namespace(
+        project_id="project1",
+        task_id=["task1", "task2"],
+        parallelism=2,
+        yes=True,
+        dry_run=True,
+        attribute_id=None,
+        attribute_name_en=None,
+        include_complete_task=False,
+        include_on_hold_task=False,
+        backup=None,
+    )
+
+    with caplog.at_level(logging.INFO), pytest.raises(AnnofabCliException):
+        NormalizeAttributeType(service, AnnofabApiFacade(service), args).main()
+
+    assert sorted(looked_up) == ["task1", "task2"]
+    assert "処理に失敗したタスク: 1件" in caplog.messages[-1]
+    assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
+    service.api.batch_update_annotations.assert_not_called()
 
 
 @pytest.mark.parametrize(
