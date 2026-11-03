@@ -287,6 +287,7 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
 
         success_count = 0
         failed_count = 0
+        task_failed = False
         annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, annotation_list_per_input_data_id)
         for input_data_id, sub_anno_list in annotation_list_per_input_data_id.items():
             try:
@@ -296,9 +297,10 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
             except Exception:
                 logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションのdata変更に失敗しました。", exc_info=True)
                 failed_count += len(sub_anno_list)
+                task_failed = True
                 continue
 
-        return True, ChangeAnnotationDataCount(success=success_count, failed=failed_count)
+        return True, ChangeAnnotationDataCount(success=success_count, failed=failed_count, task_failed=task_failed)
 
     def change_annotation_data(self, anno_list: list[TargetAnnotationData], *, parallelism: int | None = None) -> None:
         """タスク単位でアノテーションを変更する。
@@ -311,7 +313,10 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
             None。
         """
         if parallelism is not None and any(annotation.attributes is not None for annotation in anno_list):
-            self.get_annotation_specs()
+            try:
+                self.get_annotation_specs()
+            except Exception:
+                logger.warning("アノテーション仕様の事前取得に失敗しました。属性値を変更する入力データの処理時に再取得します。", exc_info=True)
 
         changed_task_count = 0
         total_failed_count = 0
