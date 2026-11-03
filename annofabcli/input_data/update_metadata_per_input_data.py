@@ -120,9 +120,11 @@ class UpdateMetadataMain(CommandLineWithConfirm):
                         self.set_metadata_to_input_data_wrapper,
                         project_id=project_id,
                         overwrite_metadata=overwrite_metadata,
-                        existing_input_data_dict=existing_input_data_dict,
                     )
-                    result_bool_list = executor.map(isolate_thread_call(partial_func), enumerate(batch_metadata_info_list, start=initial_index * BULK_REQUEST_SIZE))
+                    result_bool_list = executor.map(
+                        isolate_thread_call(partial_func, get_input_data_id=lambda item: item[1].input_data_id, existing_input_data_dict=existing_input_data_dict),
+                        enumerate(batch_metadata_info_list, start=initial_index * BULK_REQUEST_SIZE),
+                    )
                     success_count += len([e for e in result_bool_list if e])
 
         else:

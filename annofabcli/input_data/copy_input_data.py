@@ -6,7 +6,6 @@ import logging
 import sys
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -228,14 +227,18 @@ class CopyInputDataMain(CommandLineWithConfirm):
                     dest_input_data_dict = get_input_data_dict_in_bulk(self.service, self.dest_project_id, batch_input_data_id_list)
                     src_supplementary_data_dict = get_supplementary_data_dict_in_bulk(self.service, self.src_project_id, batch_input_data_id_list)
                     dest_supplementary_data_dict = get_supplementary_data_dict_in_bulk(self.service, self.dest_project_id, batch_input_data_id_list)
-                    wrapper = partial(
-                        self.copy_input_data_and_supplementary_data_wrapper,
-                        src_input_data_dict=src_input_data_dict,
-                        dest_input_data_dict=dest_input_data_dict,
-                        src_supplementary_data_dict=src_supplementary_data_dict,
-                        dest_supplementary_data_dict=dest_supplementary_data_dict,
+                    wrapper = self.copy_input_data_and_supplementary_data_wrapper
+                    result_bool_list = executor.map(
+                        isolate_thread_call(
+                            wrapper,
+                            get_input_data_id=lambda item: item[1],
+                            src_input_data_dict=src_input_data_dict,
+                            dest_input_data_dict=dest_input_data_dict,
+                            src_supplementary_data_dict=src_supplementary_data_dict,
+                            dest_supplementary_data_dict=dest_supplementary_data_dict,
+                        ),
+                        enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE),
                     )
-                    result_bool_list = executor.map(isolate_thread_call(wrapper), enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE))
                     success_count += len([e for e in result_bool_list if e])
 
         else:

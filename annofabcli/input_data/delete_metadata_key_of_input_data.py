@@ -117,9 +117,11 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
                     partial_func = partial(
                         self.delete_metadata_keys_for_one_input_data_wrapper,
                         metadata_keys=metadata_keys,
-                        existing_input_data_dict=existing_input_data_dict,
                     )
-                    result_bool_list = executor.map(isolate_thread_call(partial_func), enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE))
+                    result_bool_list = executor.map(
+                        isolate_thread_call(partial_func, get_input_data_id=lambda item: item[1], existing_input_data_dict=existing_input_data_dict),
+                        enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE),
+                    )
                     success_count += len([e for e in result_bool_list if e])
 
         else:

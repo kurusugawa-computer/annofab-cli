@@ -195,8 +195,13 @@ class UpdateInputDataMain(CommandLineWithConfirm):
             failed_count = 0
             for initial_index, batch_updated_input_data_list in enumerate(batched(updated_input_data_list, BULK_REQUEST_SIZE)):
                 existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [e.input_data_id for e in batch_updated_input_data_list])
-                partial_func = partial(self._update_input_data_wrapper, project_id=project_id, existing_input_data_dict=existing_input_data_dict)
-                result_list = list(executor.map(isolate_thread_call(partial_func), enumerate(batch_updated_input_data_list, start=initial_index * BULK_REQUEST_SIZE)))
+                partial_func = partial(self._update_input_data_wrapper, project_id=project_id)
+                result_list = list(
+                    executor.map(
+                        isolate_thread_call(partial_func, get_input_data_id=lambda item: item[1].input_data_id, existing_input_data_dict=existing_input_data_dict),
+                        enumerate(batch_updated_input_data_list, start=initial_index * BULK_REQUEST_SIZE),
+                    )
+                )
                 success_count += len([e for e in result_list if e == UpdateResult.SUCCESS])
                 skipped_count += len([e for e in result_list if e == UpdateResult.SKIPPED])
                 failed_count += len([e for e in result_list if e == UpdateResult.FAILED])
