@@ -158,6 +158,12 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
 
         success_count = 0
         if parallelism is not None:
+            if task_id_list and assign_last_acceptor and self._project_members_dict is None:
+                try:
+                    project_member_list = self.service.wrapper.get_all_project_members(self.project_id)
+                    self._project_members_dict = {member["account_id"]: member for member in project_member_list}
+                except Exception:
+                    logger.warning("プロジェクトメンバーの事前取得に失敗しました。担当者を割り当てるタスクの処理時に再取得します。", exc_info=True)
             partial_func = partial(
                 self.cancel_acceptance_for_wrapper,
                 acceptor=acceptor,
