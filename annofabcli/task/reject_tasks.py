@@ -7,7 +7,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import partial
-from typing import Any
+from typing import Any, Self
 
 import annofabapi
 from annofabapi.dataclass.task import Task
@@ -287,6 +287,17 @@ class RejectTasksMain(CommandLineWithConfirm):
             logger.warning(f"タスク'{task_id}'の差し戻しに失敗しました。", exc_info=True)
             return False
 
+    def _get_task_processor(self, _task_id: str) -> Self:
+        """複製前に対象タスク用の処理オブジェクトを選ぶ。
+
+        Args:
+            _task_id: 対象タスクID。共通実装では使用しない。
+
+        Returns:
+            スレッド用に複製する処理オブジェクト。
+        """
+        return self
+
     def reject_task_list(
         self,
         project_id: str,
@@ -306,19 +317,28 @@ class RejectTasksMain(CommandLineWithConfirm):
         logger.info(f"{len(task_id_list)} 件のタスクを差し戻します。")
 
         if parallelism is not None:
-            partial_func = partial(
-                self.reject_task_for_task_wrapper,
-                project_id=project_id,
-                inspection_comment=inspection_comment,
-                assign_last_annotator=assign_last_annotator,
-                assigned_annotator=assigned_annotator,
-                cancel_acceptance=cancel_acceptance,
-                include_break_task=include_break_task,
-                include_on_hold_task=include_on_hold_task,
-                task_query=task_query,
-            )
+
+            def _process_task(item: tuple[int, str]) -> bool:
+                try:
+                    worker = self._get_task_processor(item[1])
+                    partial_func = partial(
+                        worker.reject_task_for_task_wrapper,
+                        project_id=project_id,
+                        inspection_comment=inspection_comment,
+                        assign_last_annotator=assign_last_annotator,
+                        assigned_annotator=assigned_annotator,
+                        cancel_acceptance=cancel_acceptance,
+                        include_break_task=include_break_task,
+                        include_on_hold_task=include_on_hold_task,
+                        task_query=task_query,
+                    )
+                    return isolate_thread_call(partial_func)(item)
+                except Exception:
+                    logger.warning(f"タスク'{item[1]}'の差し戻しに失敗しました。", exc_info=True)
+                    return False
+
             with ThreadPoolExecutor(max_workers=parallelism) as executor:
-                result_bool_list = list(executor.map(isolate_thread_call(partial_func), enumerate(task_id_list)))
+                result_bool_list = list(executor.map(_process_task, enumerate(task_id_list)))
                 success_count = len([e for e in result_bool_list if e])
 
         else:
