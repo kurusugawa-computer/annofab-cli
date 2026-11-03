@@ -4,9 +4,9 @@ import argparse
 import copy
 import json
 import logging
-import multiprocessing
 import sys
 from collections.abc import Collection
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from typing import Any
 
@@ -24,6 +24,7 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.input_data._parallel import isolate_thread_call
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
@@ -110,7 +111,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
         success_count = 0
         if parallelism is not None:
             assert self.all_yes
-            with multiprocessing.Pool(parallelism) as pool:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
                 for initial_index, batch_input_data_id_list in enumerate(batched(input_data_id_list, BULK_REQUEST_SIZE)):
                     existing_input_data_dict = get_input_data_dict_in_bulk(self.service, self.project_id, batch_input_data_id_list)
                     partial_func = partial(
@@ -118,7 +119,7 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
                         metadata_keys=metadata_keys,
                         existing_input_data_dict=existing_input_data_dict,
                     )
-                    result_bool_list = pool.map(partial_func, enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE))
+                    result_bool_list = executor.map(isolate_thread_call(partial_func), enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE))
                     success_count += len([e for e in result_bool_list if e])
 
         else:
@@ -197,7 +198,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）を指定します。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
+        help="並列度を指定します。指定する場合は ``--yes`` を指定してください。指定しない場合は、逐次的に処理します。",
     )
 
     parser.set_defaults(subcommand_func=main)
