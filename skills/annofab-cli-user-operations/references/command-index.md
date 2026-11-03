@@ -88,6 +88,7 @@
 - `annofabcli annotation_zip list_3d_bounding_box_annotation`: アノテーションZIPから3Dバウンディングボックス（CUBOID）アノテーションの座標情報を出力します。
 - `annofabcli annotation_zip list_3d_segment_annotation`: アノテーションZIPから3次元セグメントアノテーションの情報を出力します。
 - `annofabcli annotation_zip list_annotation_attribute`: アノテーションZIPを読み込み、アノテーションの属性値の一覧を出力します。
+- `annofabcli annotation_zip list_attribute_restriction_violation`: アノテーションZIPを読み込み、属性制約に違反するアノテーションを出力します。
 - `annofabcli annotation_zip list_bounding_box_annotation`: アノテーションZIPからバウンディングボックス（矩形）アノテーションの座標情報を出力します。
 - `annofabcli annotation_zip list_classification_annotation`: アノテーションZIPから全体アノテーション（Classification）の情報を出力します。
 - `annofabcli annotation_zip list_polygon_annotation`: アノテーションZIPからポリゴンアノテーションの座標情報と属性情報を出力します。
