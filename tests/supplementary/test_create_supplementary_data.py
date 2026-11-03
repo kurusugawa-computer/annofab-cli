@@ -1,8 +1,9 @@
+import argparse
 import logging
 
 import pytest
 
-from annofabcli.supplementary.create_supplementary_data import CreateSupplementaryData, read_supplementary_data_csv
+from annofabcli.supplementary.create_supplementary_data import CliSupplementaryData, CreateSupplementaryData, read_supplementary_data_csv
 
 
 def test__common_message():
@@ -61,3 +62,22 @@ def test__get_supplementary_data_list_from_csv__empty_supplementary_data_number(
     supplementary_data_list = CreateSupplementaryData.get_supplementary_data_list_from_csv(csv_path)
 
     assert supplementary_data_list[0].supplementary_data_number is None
+
+
+@pytest.mark.parametrize("supplementary_thread_service", ["read", "write"], indirect=True)
+def test_thread_creation_preserves_counts_progress_and_worker_logs(supplementary_thread_service, caplog: pytest.LogCaptureFixture) -> None:
+    service, facade, created_input_ids = supplementary_thread_service
+    command = CreateSupplementaryData(service, facade, argparse.Namespace(yes=True))
+    supplementary_data = [
+        CliSupplementaryData(input_data_id=input_data_id, supplementary_data_name="data", supplementary_data_path="https://example.com/data.jpg")
+        for input_data_id in ["failed", "input1", "input2", "missing"]
+    ]
+
+    with caplog.at_level(logging.DEBUG):
+        command.create_supplementary_data_list("project1", supplementary_data, parallelism=2)
+
+    assert sorted(created_input_ids) == ["input1", "input2"]
+    assert "2 / 4 件の補助情報を作成しました" in caplog.messages[-1]
+    assert "4 / 4 件の補助情報を処理しました。" in caplog.messages
+    assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
+    assert any(record.levelno == logging.DEBUG and "補助情報を作成しました" in record.message for record in caplog.records)

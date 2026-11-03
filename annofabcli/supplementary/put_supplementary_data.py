@@ -3,9 +3,9 @@ import json
 import logging
 import re
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import partial
-from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
 
@@ -75,7 +75,7 @@ class SupplementaryDataForPut:
 
 class SubPutSupplementaryData:
     """
-    1個の補助情報を登録するためのクラス。multiprocessing.Pool対応。
+    1個の補助情報を登録するためのクラス。スレッドによる並列処理に対応。
 
     Args:
         service:
@@ -241,6 +241,26 @@ class SubPutSupplementaryData:
             )
             return False
 
+    def put_supplementary_data_main_wrapper(self, project_id: str, csv_data: CliSupplementaryData, *, overwrite: bool = False) -> bool:
+        """1件の補助情報の登録に失敗した場合はログに記録する。
+
+        Args:
+            project_id: 登録先のプロジェクトID。
+            csv_data: 登録する補助情報。
+            overwrite: 既存の補助情報を上書きするかどうか。
+
+        Returns:
+            登録に成功した場合はTrue、スキップまたは失敗した場合はFalse。
+        """
+        try:
+            return self.put_supplementary_data_main(project_id, csv_data, overwrite=overwrite)
+        except Exception:
+            logger.warning(
+                f"補助情報の登録に失敗しました。 :: input_data_id='{csv_data.input_data_id}', supplementary_data_name='{csv_data.supplementary_data_name}'",
+                exc_info=True,
+            )
+            return False
+
 
 class PutSupplementaryData(CommandLine):
     """
@@ -273,9 +293,9 @@ class PutSupplementaryData(CommandLine):
 
         obj = SubPutSupplementaryData(service=self.service, all_yes=self.all_yes)
         if parallelism is not None:
-            partial_func = partial(obj.put_supplementary_data_main, project_id, overwrite=overwrite)
-            with Pool(parallelism) as pool:
-                result_bool_list = pool.map(partial_func, supplementary_data_list)
+            partial_func = partial(obj.put_supplementary_data_main_wrapper, project_id, overwrite=overwrite)
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                result_bool_list = executor.map(partial_func, supplementary_data_list)
                 count_put_supplementary_data = len([e for e in result_bool_list if e])
 
         else:

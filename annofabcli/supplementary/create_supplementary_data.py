@@ -3,9 +3,9 @@ import json
 import logging
 import re
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import partial
-from multiprocessing import Pool
 from pathlib import Path
 from typing import Any
 
@@ -117,7 +117,7 @@ def read_supplementary_data_csv(csv_file: Path) -> pandas.DataFrame:
 
 class SubCreateSupplementaryData:
     """
-    1個の補助情報を作成するためのクラス。multiprocessing.Pool対応。
+    1個の補助情報を作成するためのクラス。スレッドによる並列処理に対応。
 
     Args:
         service:
@@ -292,9 +292,17 @@ class SubCreateSupplementaryData:
 
     def create_supplementary_data_main_wrapper(self, args: tuple[int, CliSupplementaryData], project_id: str, *, overwrite: bool, total_supplementary_data_count: int) -> bool:
         supplementary_data_index, csv_data = args
-        return self.create_supplementary_data_main(
-            project_id, csv_data, overwrite=overwrite, supplementary_data_index=supplementary_data_index, total_supplementary_data_count=total_supplementary_data_count
-        )
+        try:
+            return self.create_supplementary_data_main(
+                project_id, csv_data, overwrite=overwrite, supplementary_data_index=supplementary_data_index, total_supplementary_data_count=total_supplementary_data_count
+            )
+        except Exception:
+            logger.warning(
+                f"{supplementary_data_index + 1}/{total_supplementary_data_count}件目 :: 補助情報の作成に失敗しました。 :: "
+                f"input_data_id='{csv_data.input_data_id}', supplementary_data_name='{csv_data.supplementary_data_name}'",
+                exc_info=True,
+            )
+            return False
 
 
 class CreateSupplementaryData(CommandLine):
@@ -333,8 +341,8 @@ class CreateSupplementaryData(CommandLine):
                 overwrite=overwrite,
                 total_supplementary_data_count=len(supplementary_data_list),
             )
-            with Pool(parallelism) as pool:
-                for index, result in enumerate(pool.imap(partial_func, enumerate(supplementary_data_list)), start=1):
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                for index, result in enumerate(executor.map(partial_func, enumerate(supplementary_data_list)), start=1):
                     if result:
                         count_create_supplementary_data += 1
                     self.log_progress(index, len(supplementary_data_list))
