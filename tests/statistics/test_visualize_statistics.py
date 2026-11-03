@@ -1,17 +1,24 @@
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Barrier
 from unittest.mock import Mock
 
 import annofabapi
+import bokeh.plotting
 import pandas
 import pytest
 from annofabapi.credentials import IdPass
+from bokeh.io.state import curstate
+from bokeh.plotting import figure
 from pandas.testing import assert_frame_equal
 
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
 from annofabcli.common.user_info_mask import UserInfoMasker, create_masked_name
 from annofabcli.common.utils import read_multiheader_csv
+from annofabcli.statistics.linegraph import write_bokeh_graph as write_line_graph
+from annofabcli.statistics.scatter import write_bokeh_graph as write_scatter_graph
 from annofabcli.statistics.visualization.annotation_count_api import AnnotationCountSource
 from annofabcli.statistics.visualization.dataframe.actual_worktime import ActualWorktime
 from annofabcli.statistics.visualization.dataframe.annotation_count import AnnotationCount
@@ -207,3 +214,82 @@ def test_visualization_masks_csv_and_graphs_before_writing(tmp_path: Path, *, ex
             assert f'"{user_id}"' not in text
     selected_graph = tmp_path / "masked/line-graph/教師付者用/累積折れ線-横軸_生産量-教師付者用.html"
     assert create_masked_name("bob") in selected_graph.read_text(encoding="utf-8")
+
+
+def test_parallel_projects_continue_after_failure(tmp_path: Path) -> None:
+    service = Mock()
+    barrier = Barrier(3, timeout=10)
+
+    def get_member(project_id: str):
+        barrier.wait()
+        if project_id == "failed":
+            raise RuntimeError("テスト用のAPIエラー")
+        return {"member_role": "owner"}, None
+
+    service.api.get_project.side_effect = lambda project_id: ({"title": project_id, "input_data_type": "image"}, None)
+    service.api.get_my_member_in_project.side_effect = get_member
+    service.wrapper.get_all_project_members.return_value = [{"user_id": "user1", "account_id": "account1", "username": "User 1", "biography": ""}]
+    service.api.get_organization_of_project.return_value = ({"organization_name": "test-organization"}, None)
+    service.wrapper.get_all_organization_members.return_value = []
+    for project_id in ("prj1", "prj2"):
+        source = VisualizationSourceFiles(service, project_id, tmp_path)
+        for path, data in (
+            (source.task_json_path, []),
+            (source.comment_json_path, []),
+            (source.task_history_json_path, {}),
+            (source.task_history_event_json_path, []),
+        ):
+            path.write_text(json.dumps(data), encoding="utf-8")
+    main = VisualizingStatisticsMain(
+        service,
+        temp_dir=tmp_path,
+        task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED,
+        filtering_query=FilteringQuery(),
+        annotation_count=AnnotationCount.empty(),
+        not_download_visualization_source_files=True,
+        output_only_text=True,
+    )
+    output = tmp_path / "output"
+    actual = main.visualize_statistics_for_project_list(["prj1", "failed", "prj2"], output, parallelism=3)
+
+    assert actual == [output / "prj1", output / "prj2"]
+    for project_id in ("prj1", "prj2"):
+        info = json.loads((output / project_id / "project_info.json").read_text(encoding="utf-8"))
+        assert info["project_id"] == project_id
+    assert not (output / "failed").exists()
+
+
+@pytest.mark.parametrize("graph_type", ["line", "scatter", "worktime_histogram", "others_histogram"])
+def test_parallel_graphs_keep_output_separate(graph_type: str, tmp_path: Path) -> None:
+    barrier = Barrier(2, timeout=30)
+    sentinel = tmp_path / "unrelated.html"
+    bokeh.plotting.output_file(sentinel, title="既存の設定")
+    original_file = curstate().file
+
+    def write_graph(index: int) -> Path:
+        output = tmp_path / f"project{index}" / f"graph{index}.html"
+        if graph_type in {"line", "scatter"}:
+            graph = figure(title=f"project{index}")
+            graph.scatter([index], [index])
+            barrier.wait()
+            writer = write_line_graph if graph_type == "line" else write_scatter_graph
+            writer(graph, output)
+        else:
+            project = ProjectDir(Path("tests/data/stat_visualization/mask_visualization_dir/visualization1"), TaskCompletionCriteria.ACCEPTANCE_COMPLETED)
+            task = project.read_task_list()
+            barrier.wait()
+            if graph_type == "worktime_histogram":
+                task.plot_histogram_of_worktime(output)
+            else:
+                task.plot_histogram_of_others(output)
+        return output
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            paths = list(executor.map(write_graph, range(2)))
+        for path in paths:
+            assert f"<title>{path.stem}</title>" in path.read_text(encoding="utf-8")
+        assert not sentinel.exists()
+        assert curstate().file is original_file
+    finally:
+        bokeh.plotting.reset_output()
