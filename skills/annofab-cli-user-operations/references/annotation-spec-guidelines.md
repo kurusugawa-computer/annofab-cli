@@ -83,6 +83,10 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/
 ]
 ```
 
+* 属性制約`matches`で指定された正規表現は部分一致でなく完全一致で評価されます。したがって、`^`と`$`は不要です。
+* 属性同士の制約は、同じラベルに所属している属性同士で設けてください。異なるラベルに属する属性同士で制約を設けることはできますが、アノテーションエディタ画面で期待通りの挙動になりません。
+
+
 ## オプションの変更
 * 動画プロジェクトの場合は、`annotation_specs update_option`で`{"can_overwrap": false}`を指定すべきかを検討してください。
 
@@ -120,6 +124,4 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/
 以下の場合は指摘が不要です。
 * 日本語名に英語名が記載されているなど、言語と名前が対応しない場合。名前を翻訳する手間を省くため、そのように設定することがあるためです。
 
-### 補足
-* 属性制約`matches`で指定された正規表現は部分一致でなく完全一致で評価されます。したがって、`^`と`$`は不要です。
 
