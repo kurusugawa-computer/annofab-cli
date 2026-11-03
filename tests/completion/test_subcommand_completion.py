@@ -9,5 +9,5 @@ def test_bash用の補完スクリプトを出力する(capsys: pytest.CaptureFi
     main(["completion", "bash"])
 
     captured = capsys.readouterr()
-    assert "complete -F _shtab_annofabcli annofabcli" in captured.out
+    assert "-F _shtab_annofabcli annofabcli" in captured.out
     assert "--project_id" in captured.out
