@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import logging
+import threading
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
@@ -8,6 +10,40 @@ from unittest.mock import Mock
 import pytest
 
 from annofabcli.annotation.dump_annotation import DumpAnnotationMain
+
+
+def test_thread_dump_preserves_batches_files_counts_and_worker_logs(tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    service = Mock()
+    service.api.get_project.return_value = ({"title": "project"}, None)
+    barrier = threading.Barrier(2)
+    main_thread_id = threading.get_ident()
+    bulk_requests: list[list[str]] = []
+
+    def get_tasks(_project_id, *, query_params):
+        task_ids = query_params["task_id"].split(",")
+        bulk_requests.append(task_ids)
+        return {"success": [{"task_id": task_id, "input_data_id_list": ["input1"]} for task_id in task_ids]}, None
+
+    def get_annotation(_project_id, task_id, _input_data_id, *, query_params):
+        assert threading.get_ident() != main_thread_id
+        assert query_params["task_history_id"] == "history1"
+        if task_id in {"task0", "task1"}:
+            barrier.wait(timeout=10)
+        if task_id == "task0":
+            raise RuntimeError("annotation API failure")
+        return {"format_version": "2.0.0", "details": [], "input_data_id": "input1", "task_id": task_id}, None
+
+    service.api.get_tasks_in_bulk.side_effect = get_tasks
+    service.api.get_editor_annotation.side_effect = get_annotation
+    with caplog.at_level(logging.DEBUG):
+        DumpAnnotationMain(service, "project1").dump_annotation([f"task{index}" for index in range(101)], tmp_path, task_history_id="history1", parallelism=2)
+
+    assert bulk_requests == [[f"task{index}" for index in range(100)], ["task100"]]
+    assert len(list(tmp_path.glob("*/input1.json"))) == 100
+    assert json.loads((tmp_path / "task100/input1.json").read_text(encoding="utf-8"))["task_id"] == "task100"
+    assert "100 / 101" in caplog.messages[-1]
+    assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
+    assert any(record.levelno == logging.DEBUG and record.thread != main_thread_id for record in caplog.records)
 
 
 class TestDumpAnnotationMain:

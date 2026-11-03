@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import copy
 import logging
-import multiprocessing
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -255,8 +255,8 @@ class NormalizeAttributeType(CommandLine):
         )
         logger.info(f"{len(task_ids)} 件のタスクの属性型を正規化します。dry_run={args.dry_run}")
         if args.parallelism is not None:
-            with multiprocessing.Pool(args.parallelism) as pool:
-                results = pool.map(main_obj.normalize_for_task, enumerate(dict.fromkeys(task_ids)))
+            with ThreadPoolExecutor(max_workers=args.parallelism) as executor:
+                results = list(executor.map(main_obj.normalize_for_task, enumerate(dict.fromkeys(task_ids))))
         else:
             results = [main_obj.normalize_for_task(item) for item in enumerate(dict.fromkeys(task_ids))]
         failed_input_data = sum(result.failed_input_data for result in results)

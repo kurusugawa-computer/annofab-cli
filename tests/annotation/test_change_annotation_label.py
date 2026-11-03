@@ -360,7 +360,8 @@ def test_backup_confirmation_controls_subsequent_label_changes(monkeypatch: pyte
 
 
 @pytest.mark.parametrize("fail", [False, True])
-def test_batch_continues_and_reports_failures(fail: bool) -> None:  # noqa: FBT001
+@pytest.mark.parametrize("parallelism", [None, 2])
+def test_batch_continues_and_reports_failures(fail: bool, parallelism: int | None) -> None:  # noqa: FBT001
     service = Mock()
     service.api.get_project.return_value = ({"title": "project1"}, None)
     service.wrapper.get_task_or_none.side_effect = [RuntimeError("API failure") if fail else None, None]
@@ -371,12 +372,16 @@ def test_batch_continues_and_reports_failures(fail: bool) -> None:  # noqa: FBT0
                 ["task1", "task2"],
                 annotation_query=AnnotationQueryForAPI(label_id="car"),
                 dest_label_info=DestLabelInfo(label_id="car", annotation_type="polygon", additional_data_definition_ids=set()),
+                parallelism=parallelism,
             )
     else:
         obj.change_annotation_label_for_task_list(
-            ["task1", "task2"], annotation_query=AnnotationQueryForAPI(label_id="car"), dest_label_info=DestLabelInfo(label_id="car", annotation_type="polygon", additional_data_definition_ids=set())
+            ["task1", "task2"],
+            annotation_query=AnnotationQueryForAPI(label_id="car"),
+            dest_label_info=DestLabelInfo(label_id="car", annotation_type="polygon", additional_data_definition_ids=set()),
+            parallelism=parallelism,
         )
-    assert [call.args[1] for call in service.wrapper.get_task_or_none.call_args_list] == ["task1", "task2"]
+    assert sorted(call.args[1] for call in service.wrapper.get_task_or_none.call_args_list) == ["task1", "task2"]
     service.api.batch_update_annotations.assert_not_called()
 
 

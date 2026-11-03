@@ -4,8 +4,8 @@ import argparse
 import functools
 import json
 import logging
-import multiprocessing
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -245,8 +245,8 @@ class ChangeAnnotationAttributesMain(CommandLineWithConfirm):
             backup_dir=backup_dir,
         )
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
-                results = pool.map(func, enumerate(task_id_list))
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                results = list(executor.map(func, enumerate(task_id_list)))
         else:
             results = [func(item) for item in enumerate(task_id_list)]
 

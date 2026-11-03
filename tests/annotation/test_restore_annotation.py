@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 from typing import Any
 from unittest.mock import Mock
@@ -10,6 +11,31 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 from annofabapi.parser import SimpleAnnotationDirParser
 
 from annofabcli.annotation.restore_annotation import RestoreAnnotationMain
+
+
+def test_thread_restore_consumes_lazy_parsers_and_reports_worker_errors(threaded_task_lookup, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    service, looked_up = threaded_task_lookup
+    for task_id in ["task1", "task2"]:
+        directory = tmp_path / task_id
+        directory.mkdir()
+        (directory / "input1.json").write_text("{}", encoding="utf-8")
+    command = RestoreAnnotationMain(
+        service,
+        project_id="project1",
+        all_yes=True,
+        include_complete_task=False,
+        include_break_task=False,
+        include_on_hold_task=False,
+    )
+
+    with caplog.at_level(logging.INFO):
+        command.main(tmp_path, target_task_ids={"task1", "task2", "absent"}, parallelism=2)
+
+    assert sorted(looked_up) == ["task1", "task2"]
+    assert "0 / 2" in caplog.messages[-1]
+    assert any("absent" in message for message in caplog.messages)
+    assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
+    service.api.put_annotation.assert_not_called()
 
 
 class TestRestoreAnnotationMain:

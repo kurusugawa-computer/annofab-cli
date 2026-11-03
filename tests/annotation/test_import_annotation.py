@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 from typing import Any, cast
 
@@ -8,12 +9,47 @@ from annofabapi.models import ProjectMemberRole, TaskStatus
 from annofabapi.parser import (
     SimpleAnnotationDirParser,
     SimpleAnnotationParserByTask,
+    lazy_parse_simple_annotation_dir_by_task,
 )
 from pydantic import ValidationError
 
 from annofabcli.annotation.editor_props import validate_editor_props_for_cli
 from annofabcli.annotation.import_annotation import AnnotationConverter, ImportAnnotationMain, ImportedSimpleAnnotation, ImportedSimpleAnnotationDetail
 from annofabcli.common.facade import TaskQuery
+
+
+def test_thread_import_consumes_lazy_parsers_and_reports_worker_errors(threaded_task_lookup, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
+    api_service, looked_up = threaded_task_lookup
+    for task_id in ["task1", "task2"]:
+        directory = tmp_path / task_id
+        directory.mkdir()
+        (directory / "input1.json").write_text("{}", encoding="utf-8")
+    converter = AnnotationConverter(
+        {"project_id": "project1", "input_data_type": "image"},
+        {"labels": [], "additionals": [], "inspection_phrases": []},
+        service=api_service,
+    )
+    command = ImportAnnotationMain(
+        api_service,
+        project_id="project1",
+        all_yes=True,
+        is_merge=False,
+        is_overwrite=True,
+        include_complete_task=False,
+        include_break_task=False,
+        include_on_hold_task=False,
+        converter=converter,
+    )
+
+    with caplog.at_level(logging.INFO):
+        command.main(lazy_parse_simple_annotation_dir_by_task(tmp_path), target_task_ids={"task1", "task2", "absent"}, parallelism=2)
+
+    assert sorted(looked_up) == ["task1", "task2"]
+    assert "0 / 2" in caplog.messages[-1]
+    assert any("absent" in message for message in caplog.messages)
+    assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
+    api_service.api.put_annotation.assert_not_called()
+
 
 service = annofabapi.build()
 

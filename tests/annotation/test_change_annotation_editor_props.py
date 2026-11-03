@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import logging
 from typing import cast
 from unittest.mock import Mock
 
@@ -35,6 +36,28 @@ ANNOTATION_SPECS = {
     "additionals": [],
     "inspection_phrases": [],
 }
+
+
+def test_thread_editor_props_reports_worker_errors_and_counts(threaded_task_lookup, caplog: pytest.LogCaptureFixture) -> None:
+    service, looked_up = threaded_task_lookup
+    command = ChangeAnnotationEditorPropsMain(
+        service,
+        project_id="project1",
+        target_label_ids=set(),
+        editor_props={},
+        include_complete_task=False,
+        include_break_task=False,
+        include_on_hold_task=False,
+        all_yes=True,
+    )
+
+    with caplog.at_level(logging.INFO):
+        command.change_editor_props_for_task_list(["task1", "task2"], parallelism=2)
+
+    assert sorted(looked_up) == ["task1", "task2"]
+    assert "0 / 2" in caplog.messages[-1]
+    assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
+    service.api.put_annotation.assert_not_called()
 
 
 class TestGetLabelIdsFromLabelNames:

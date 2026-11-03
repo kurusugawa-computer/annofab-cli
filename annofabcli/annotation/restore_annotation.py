@@ -3,9 +3,9 @@ from __future__ import annotations
 import argparse
 import copy
 import logging
-import multiprocessing
 import sys
 from collections.abc import Iterator
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -236,8 +236,8 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
         success_count = 0
         task_count = 0
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(self.execute_task_wrapper, enumerate(iter_task_parser))
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                result_bool_list = list(executor.map(self.execute_task_wrapper, enumerate(iter_task_parser)))
                 success_count = len([e for e in result_bool_list if e])
                 task_count = len(result_bool_list)
 

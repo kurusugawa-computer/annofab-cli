@@ -77,17 +77,18 @@ def test_all_tasks_updates_attributes(task_ids: list[str]) -> None:
 
 
 @pytest.mark.parametrize("fail", [False, True])
-def test_batch_continues_and_reports_failures(fail: bool) -> None:  # noqa: FBT001
+@pytest.mark.parametrize("parallelism", [None, 2])
+def test_batch_continues_and_reports_failures(fail: bool, parallelism: int | None) -> None:  # noqa: FBT001
     service = Mock()
     service.api.get_project.return_value = ({"title": "project1"}, None)
     service.wrapper.get_task_or_none.side_effect = [RuntimeError("API failure") if fail else None, None]
     obj = ChangeAnnotationAttributesMain(service, project_id="project1", include_complete_task=False, all_yes=True)
     if fail:
         with pytest.raises(AnnofabCliException):
-            obj.change_annotation_attributes_for_task_list(["task1", "task2"], annotation_query=AnnotationQueryForAPI(label_id="car"), additional_data_list=[])
+            obj.change_annotation_attributes_for_task_list(["task1", "task2"], annotation_query=AnnotationQueryForAPI(label_id="car"), additional_data_list=[], parallelism=parallelism)
     else:
-        obj.change_annotation_attributes_for_task_list(["task1", "task2"], annotation_query=AnnotationQueryForAPI(label_id="car"), additional_data_list=[])
-    assert [call.args[1] for call in service.wrapper.get_task_or_none.call_args_list] == ["task1", "task2"]
+        obj.change_annotation_attributes_for_task_list(["task1", "task2"], annotation_query=AnnotationQueryForAPI(label_id="car"), additional_data_list=[], parallelism=parallelism)
+    assert sorted(call.args[1] for call in service.wrapper.get_task_or_none.call_args_list) == ["task1", "task2"]
     service.api.batch_update_annotations.assert_not_called()
 
 

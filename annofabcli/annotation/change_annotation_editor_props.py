@@ -4,10 +4,10 @@ import argparse
 import copy
 import json
 import logging
-import multiprocessing
 import sys
 from collections import defaultdict
 from collections.abc import Collection
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -294,8 +294,8 @@ class ChangeAnnotationEditorPropsMain(CommandLineWithConfirm):
         total_success_count = 0
         total_failed_count = 0
         if parallelism is not None:
-            with multiprocessing.Pool(parallelism) as pool:
-                result_list = pool.map(self.change_editor_props_for_task_wrapper, enumerate(task_id_list))
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                result_list = list(executor.map(self.change_editor_props_for_task_wrapper, enumerate(task_id_list)))
         else:
             result_list = []
             for task_index, task_id in enumerate(task_id_list):
