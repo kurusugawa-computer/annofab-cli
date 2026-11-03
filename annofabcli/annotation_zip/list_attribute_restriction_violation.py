@@ -76,6 +76,11 @@ class ListAttributeRestrictionViolationMain:
         for violation in violations:
             detail = details[violation.annotation_id]
             restriction = self.specs["restrictions"][violation.restriction_index]
+            try:
+                restriction_text = Restriction.from_dict(restriction).to_human_readable(self.specs)
+            except (ValueError, KeyError, TypeError, NotImplementedError):
+                logger.warning(f"制約{violation.restriction_index}を説明文に変換できないため、JSONで出力します。", exc_info=True)
+                restriction_text = json.dumps(restriction, ensure_ascii=False)
             # 分類アノテーションのdataはnullなので、エディタの種類からURLを生成する。
             if detail["data"] is None:
                 if self.editor_type == "video":
@@ -97,7 +102,7 @@ class ListAttributeRestrictionViolationMain:
                     "attribute_value": detail["attributes"].get(violation.attribute_name),
                     "restriction_index": violation.restriction_index,
                     "restriction_type": restriction["condition"]["_type"],
-                    "restriction_text": Restriction.from_dict(restriction).to_human_readable(self.specs),
+                    "restriction_text": restriction_text,
                     "restriction": restriction,
                     "annotation_editor_url": url,
                 }

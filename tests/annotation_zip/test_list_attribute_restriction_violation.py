@@ -191,3 +191,16 @@ def test_project_download_and_task_filter(specs: dict, tmp_path: Path, monkeypat
     assert len(rows) == 1
     assert rows[0]["task_id"] == "task2"
     assert len(list(args.temp_dir.glob("*.zip"))) == 1
+
+
+@pytest.mark.parametrize(("condition_type", "actual_value"), [("Equals", True), ("NotEquals", False)])
+def test_false_flag_comparison_preserves_all_violations(specs: dict, condition_type: str, *, actual_value: bool) -> None:
+    specs["restrictions"] = [
+        {"additional_data_definition_id": "unclear", "condition": {"_type": condition_type, "value": "false"}},
+        {"additional_data_definition_id": "comment", "condition": {"_type": "NotEquals", "value": ""}},
+    ]
+    rows = ListAttributeRestrictionViolationMain(specs).validate_input_data(annotation([detail("a1", unclear=actual_value)]))
+    assert [row["attribute_id"] for row in rows] == ["unclear", "comment"]
+    assert rows[0]["attribute_value"] is actual_value
+    assert rows[0]["restriction"] == specs["restrictions"][0]
+    assert rows[0]["restriction_text"]

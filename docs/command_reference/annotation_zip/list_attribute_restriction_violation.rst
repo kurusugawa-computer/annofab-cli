@@ -57,7 +57,7 @@ JSON形式でも出力できます。
 * ``attribute_value``: 保存されている属性値。未設定の場合はJSONではnull、CSVでは空欄です。
 * ``restriction_index``: 取得した仕様の ``restrictions`` 内の0始まりの位置。
 * ``restriction_type``: 制約の種類。属性間制約の場合は ``Imply`` です。
-* ``restriction_text``: 制約を読みやすい文字列にしたもの。
+* ``restriction_text``: 制約を読みやすい文字列にしたもの。変換できない場合は元の制約のJSON文字列。
 * ``restriction``: 元の制約。CSVではJSON文字列です。
 * ``annotation_editor_url``: 対象アノテーションを開くURL。
 
