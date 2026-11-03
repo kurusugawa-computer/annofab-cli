@@ -4,10 +4,9 @@ import argparse
 import copy
 import enum
 import logging
-import multiprocessing
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from enum import Enum
-from functools import partial
 from pathlib import Path
 
 import annofabapi
@@ -162,11 +161,10 @@ class UpdateProjectMain(CommandLineWithConfirm):
     ) -> None:
         """複数のプロジェクトを並列的に更新します。"""
 
-        logger.info(f"{len(updated_project_list)} 件のプロジェクトを更新します。{parallelism}個のプロセスを使用して並列実行します。")
+        logger.info(f"{len(updated_project_list)} 件のプロジェクトを更新します。{parallelism}個のスレッドを使用して並列実行します。")
 
-        partial_func = partial(self._update_project_wrapper)
-        with multiprocessing.Pool(parallelism) as pool:
-            result_list = pool.map(partial_func, enumerate(updated_project_list))
+        with ThreadPoolExecutor(max_workers=parallelism) as executor:
+            result_list = list(executor.map(self._update_project_wrapper, enumerate(updated_project_list)))
             success_count = len([e for e in result_list if e == UpdateResult.SUCCESS])
             skipped_count = len([e for e in result_list if e == UpdateResult.SKIPPED])
             failed_count = len([e for e in result_list if e == UpdateResult.FAILED])
@@ -282,7 +280,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         "--parallelism",
         type=int,
         choices=PARALLELISM_CHOICES,
-        help="使用するプロセス数（並列度）。指定しない場合は、逐次的に処理します。指定する場合は ``--yes`` も一緒に指定する必要があります。",
+        help="並列度。指定しない場合は、逐次的に処理します。指定する場合は ``--yes`` も一緒に指定する必要があります。",
     )
 
     parser.set_defaults(subcommand_func=main)
