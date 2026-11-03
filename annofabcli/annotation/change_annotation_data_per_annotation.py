@@ -7,6 +7,7 @@ import logging
 import sys
 from collections import defaultdict
 from collections.abc import Collection
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -23,6 +24,7 @@ from annofabcli.annotation.dump_annotation import DumpAnnotationMain
 from annofabcli.common.annofab.editor_annotation import get_editor_annotation_dict_in_bulk
 from annofabcli.common.cli import (
     COMMAND_LINE_ERROR_STATUS_CODE,
+    PARALLELISM_CHOICES,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
@@ -294,8 +296,16 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
 
         return True, ChangeAnnotationDataCount(success=success_count, failed=failed_count)
 
-    def change_annotation_data(self, anno_list: list[TargetAnnotationData]) -> None:
-        """アノテーションごとにdataを変更する。"""
+    def change_annotation_data(self, anno_list: list[TargetAnnotationData], *, parallelism: int | None = None) -> None:
+        """タスク単位でアノテーションを変更する。
+
+        Args:
+            anno_list: 各アノテーションの変更内容。
+            parallelism: 同時に処理するタスク数。Noneの場合は逐次処理する。
+
+        Returns:
+            None。
+        """
         changed_task_count = 0
         total_failed_count = 0
         total_success_count = 0
@@ -304,9 +314,21 @@ class ChangeAnnotationDataPerAnnotationMain(CommandLineWithConfirm):
         total_task_count = len(annotation_list_per_task_id_input_data_id)
         total_annotation_count = len(anno_list)
 
-        for task_index, (task_id, input_data_dict) in enumerate(annotation_list_per_task_id_input_data_id.items(), start=1):
+        def _process_task(task_index_and_items: tuple[int, tuple[str, dict[str, list[TargetAnnotationData]]]]) -> tuple[bool, ChangeAnnotationDataCount]:
+            task_index, (task_id, input_data_dict) = task_index_and_items
             logger.info(f"{task_index} / {total_task_count} 件目 :: task_id='{task_id}' のアノテーションのdataを変更します。")
-            is_changeable_task, count = self.change_annotation_data_for_task(task_id, input_data_dict)
+            # 確認状態やAPIクライアントをタスク間で共有しない。
+            main_obj = copy.deepcopy(self) if parallelism is not None else self
+            return main_obj.change_annotation_data_for_task(task_id, input_data_dict)
+
+        task_items = enumerate(annotation_list_per_task_id_input_data_id.items(), start=1)
+        if parallelism is None:
+            results = [_process_task(item) for item in task_items]
+        else:
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                results = list(executor.map(_process_task, task_items))
+
+        for is_changeable_task, count in results:
             total_success_count += count.success
             total_failed_count += count.failed
 
@@ -327,6 +349,12 @@ class ChangeDataPerAnnotation(CommandLine):
 
     def main(self) -> None:
         args = self.args
+        if args.parallelism is not None and not args.yes:
+            print(  # noqa: T201
+                f"{self.COMMON_MESSAGE} argument --parallelism: '--parallelism'を指定するときは、'--yes' を指定してください。",
+                file=sys.stderr,
+            )
+            sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
 
         if args.json is not None:
             annotation_items = get_json_from_args(args.json)
@@ -388,7 +416,7 @@ class ChangeDataPerAnnotation(CommandLine):
             include_on_hold_task=args.include_on_hold_task,
             backup_dir=backup_dir,
         )
-        main_obj.change_annotation_data(target_annotation_list)
+        main_obj.change_annotation_data(target_annotation_list, parallelism=args.parallelism)
 
 
 def main(args: argparse.Namespace) -> None:
@@ -444,6 +472,12 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         help="アノテーションのバックアップを保存するディレクトリのパス。アノテーションの復元は ``annotation restore`` コマンドで実現できます。",
     )
 
+    parser.add_argument(
+        "--parallelism",
+        type=int,
+        choices=PARALLELISM_CHOICES,
+        help="並列に処理するタスク数。指定しない場合は逐次処理します。指定した場合は、``--yes`` も指定してください。",
+    )
     parser.set_defaults(subcommand_func=main)
 
 
