@@ -1,7 +1,7 @@
 import logging
-import multiprocessing
 import uuid
 from collections.abc import Collection
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import partial
 from typing import Any
@@ -296,8 +296,8 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
                 include_break_task=include_break_task,
                 include_on_hold_task=include_on_hold_task,
             )
-            with multiprocessing.Pool(parallelism) as pool:
-                result_bool_list = pool.map(func, enumerate(task_ids))
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                result_bool_list = executor.map(func, enumerate(task_ids))
                 success_count = len([e for e in result_bool_list if e])
 
         else:
