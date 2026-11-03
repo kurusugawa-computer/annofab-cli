@@ -4,9 +4,9 @@ import argparse
 import enum
 import functools
 import logging
-import multiprocessing
 import sys
 from collections import Counter, defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -28,6 +28,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.task._parallel import isolate_thread_call
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
@@ -335,14 +336,14 @@ class UpdateTaskInputDataMain(CommandLineWithConfirm):
         logger.info(f"{total_count} 件のタスクの入力データを更新します。")
 
         if self.parallelism is not None:
-            with multiprocessing.Pool(self.parallelism) as pool:
+            with ThreadPoolExecutor(max_workers=self.parallelism) as executor:
                 for initial_index, update_info_batch in enumerate(batched(update_info_list, BULK_REQUEST_SIZE)):
                     existing_task_dict = get_task_dict_in_bulk(self.service, self.project_id, [info.task_id for info in update_info_batch])
                     wrapper = functools.partial(self.update_task_input_data_wrapper, existing_task_dict=existing_task_dict)
                     indexed_update_info_list = list(enumerate(update_info_batch, start=initial_index * BULK_REQUEST_SIZE + 1))
                     for index, result in zip(
                         range(initial_index * BULK_REQUEST_SIZE + 1, initial_index * BULK_REQUEST_SIZE + len(update_info_batch) + 1),
-                        pool.imap(wrapper, indexed_update_info_list),
+                        executor.map(isolate_thread_call(wrapper), indexed_update_info_list),
                         strict=True,
                     ):
                         result_counter[result] += 1

@@ -3,9 +3,9 @@ from __future__ import annotations
 import argparse
 import functools
 import logging
-import multiprocessing
 import sys
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -29,6 +29,7 @@ from annofabcli.common.cli import (
     get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
+from annofabcli.task._parallel import isolate_thread_call
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
@@ -297,11 +298,11 @@ class CreateTaskMain(CommandLineWithConfirm):
         success_count = 0
         total_count = len(task_creation_info_list)
         if self.parallelism is not None:
-            with multiprocessing.Pool(self.parallelism) as p:
+            with ThreadPoolExecutor(max_workers=self.parallelism) as executor:
                 for initial_index, task_creation_info_batch in enumerate(batched(task_creation_info_list, BULK_REQUEST_SIZE)):
                     existing_task_dict = get_task_dict_in_bulk(self.service, self.project_id, [e.task_id for e in task_creation_info_batch])
                     wrapper = functools.partial(self.create_task_wrapper, existing_task_dict=existing_task_dict)
-                    for index, result in enumerate(p.imap(wrapper, task_creation_info_batch), start=initial_index * BULK_REQUEST_SIZE + 1):
+                    for index, result in enumerate(executor.map(isolate_thread_call(wrapper), task_creation_info_batch), start=initial_index * BULK_REQUEST_SIZE + 1):
                         if result:
                             success_count += 1
                         self.log_progress(index, total_count)
