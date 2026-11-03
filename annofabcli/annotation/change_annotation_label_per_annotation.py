@@ -311,7 +311,7 @@ class ChangeAnnotationLabelPerAnnotationMain(CommandLineWithConfirm):
             f"スキップしたアノテーション数は{skipped}件、失敗したアノテーション数は{failed}件です。"
         )
 
-        failed_task_count = sum(count.task_failed for _, count in results)
+        failed_task_count = sum(count.task_failed or count.failed > 0 for _, count in results)
         if failed_task_count:
             raise AnnofabCliException(f"{failed_task_count} 件のタスクの処理に失敗しました。")
 
