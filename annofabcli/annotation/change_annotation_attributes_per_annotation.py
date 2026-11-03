@@ -186,7 +186,7 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
         logger.debug(log_message)
         return succeed_to_change_annotation_count, non_target_annotation_count
 
-    def change_annotation_attributes_for_task(self, task_id: str, annotation_list_per_input_data_id: dict[str, list[TargetAnnotation]]) -> tuple[bool, int, int]:
+    def change_annotation_attributes_for_task(self, task_id: str, annotation_list_per_input_data_id: dict[str, list[TargetAnnotation]]) -> ChangeAnnotationAttributesTaskResult:
         """
         1個のタスクに含まれるアノテーションの属性値を変更する。
 
@@ -195,10 +195,7 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             annotation_list_per_input_data_id: 入力データIDごとのアノテーションリスト
 
         Returns:
-            tuple:
-                [0]: 属性値の変更可能なタスクかどうか
-                [1]: 属性値の変更に成功したアノテーション数
-                [2]: 属性値を変更できなかったアノテーション数
+            変更可能なタスクを処理したかどうか、変更件数、例外の発生有無。
 
         """
         annotation_count = sum(len(v) for v in annotation_list_per_input_data_id.values())
@@ -209,19 +206,19 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
 
         if task is None:
             logger.warning(f"task_id='{task_id}' :: タスクが存在しないため、{annotation_count} 件のアノテーションの属性値の変更をスキップします。")
-            return False, 0, annotation_count
+            return ChangeAnnotationAttributesTaskResult(changed=False, success=0, failed=annotation_count)
 
         if task["status"] == TaskStatus.WORKING.value:
             logger.info(f"task_id='{task_id}' :: タスクが作業中状態のため、{annotation_count} 件のアノテーションの属性値の変更をスキップします。")
             failed_to_change_annotation_count += annotation_count
-            return False, 0, annotation_count
+            return ChangeAnnotationAttributesTaskResult(changed=False, success=0, failed=annotation_count)
 
         if task["status"] == TaskStatus.ON_HOLD.value and not self.include_on_hold_task:
             logger.info(
                 f"task_id='{task_id}' :: タスクが保留中状態のため、{annotation_count} 件のアノテーションの属性値の変更をスキップします。"
                 "保留中状態のタスクのアノテーションも変更するには、`--include_on_hold_task` オプションを指定してください。"
             )
-            return False, 0, annotation_count
+            return ChangeAnnotationAttributesTaskResult(changed=False, success=0, failed=annotation_count)
 
         if not self.include_complete_task:  # noqa: SIM102
             if task["status"] == TaskStatus.COMPLETE.value:
@@ -230,12 +227,13 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
                     f"完了状態のタスクのアノテーションも変更するには、`--include_complete_task` オプションを指定してください。"
                 )
                 failed_to_change_annotation_count += annotation_count
-                return False, 0, annotation_count
+                return ChangeAnnotationAttributesTaskResult(changed=False, success=0, failed=annotation_count)
 
         if not self.confirm_processing(f"task_id='{task_id}'に含まれるアノテーション{annotation_count}件の属性値を変更しますか？"):
-            return False, 0, annotation_count
+            return ChangeAnnotationAttributesTaskResult(changed=False, success=0, failed=annotation_count)
 
         annotation_dict = get_editor_annotation_dict_in_bulk(self.service, self.project_id, task_id, annotation_list_per_input_data_id)
+        task_failed = False
         for input_data_id, sub_anno_list in annotation_list_per_input_data_id.items():
             try:
                 tmp_succeed_to_change_annotation_count, tmp_failed_to_change_annotation_count = self.change_annotation_attributes_by_frame(
@@ -246,9 +244,15 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             except Exception:
                 logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの属性値変更に失敗しました。", exc_info=True)
                 failed_to_change_annotation_count += len(sub_anno_list)
+                task_failed = True
                 continue
 
-        return True, succeed_to_change_annotation_count, failed_to_change_annotation_count
+        return ChangeAnnotationAttributesTaskResult(
+            changed=True,
+            success=succeed_to_change_annotation_count,
+            failed=failed_to_change_annotation_count,
+            task_failed=task_failed,
+        )
 
     def change_annotation_attributes(self, anno_list: list[TargetAnnotation], *, parallelism: int | None = None) -> None:
         """タスク単位でアノテーションを変更する。
@@ -274,8 +278,7 @@ class ChangeAnnotationAttributesPerAnnotationMain(CommandLineWithConfirm):
             # 確認状態やAPIクライアントをタスク間で共有しない。
             try:
                 main_obj = copy.deepcopy(self) if parallelism is not None else self
-                changed, success, failed = main_obj.change_annotation_attributes_for_task(task_id, input_data_dict)
-                return ChangeAnnotationAttributesTaskResult(changed, success, failed)
+                return main_obj.change_annotation_attributes_for_task(task_id, input_data_dict)
             except Exception:
                 logger.warning(f"task_id='{task_id}' :: タスクの処理に失敗しました。", exc_info=True)
                 annotation_count = sum(len(items) for items in input_data_dict.values())
