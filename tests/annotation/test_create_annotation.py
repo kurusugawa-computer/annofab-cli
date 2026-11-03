@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+from contextlib import nullcontext
 from pathlib import Path
 from threading import Barrier
 from typing import Any
@@ -21,6 +22,7 @@ from annofabcli.annotation.create_annotation import (
 )
 from annofabcli.annotation.create_annotation_converter import CreateAnnotationConverter
 from annofabcli.common.cli import COMMAND_LINE_ERROR_STATUS_CODE
+from annofabcli.common.exceptions import AnnofabCliException
 
 annotation_specs = json.loads(Path("tests/data/annotation/import_annotation/annotation_specs.json").read_text(encoding="utf-8"))
 
@@ -215,16 +217,19 @@ def test_main__task_idで絞り込みし存在しないtask_idを警告する(tm
     assert "task3" in caplog.text
 
 
+@pytest.mark.parametrize("failure", ["none", "get_task", "restore"])
 @pytest.mark.parametrize("parallelism", [None, 2])
 @pytest.mark.parametrize("role", ["owner", "accepter"])
-def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path, caplog: pytest.LogCaptureFixture, parallelism: int | None, role: str) -> None:
+def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path, caplog: pytest.LogCaptureFixture, parallelism: int | None, role: str, failure: str) -> None:
     service = Mock()
     barrier = Barrier(2)
     updates: list[tuple[str, str]] = []
     events: list[tuple[str, str]] = []
 
     def get_task(_project_id, task_id):
-        if parallelism is not None and task_id in {"task1", "task2"}:
+        if failure == "get_task" and task_id == "task1":
+            raise RuntimeError("task API failure")
+        if failure == "none" and parallelism is not None and task_id in {"task1", "task2"}:
             barrier.wait(timeout=10)
         return {"task_id": task_id, "status": "complete" if task_id == "complete" else "not_started", "account_id": "old_operator", "updated_datetime": "2026-01-01T00:00:00Z"}
 
@@ -249,6 +254,8 @@ def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path,
 
     def change_operator(_project_id, task_id, *, operator_account_id, last_updated_datetime):
         events.append((task_id, operator_account_id))
+        if failure == "restore" and task_id == "task1" and operator_account_id == "old_operator":
+            raise RuntimeError("operator API failure")
         return {"updated_datetime": last_updated_datetime}
 
     service.api.account_id = "current_operator"
@@ -272,17 +279,23 @@ def test_task_parallelism_preserves_backup_order_and_status_skip(tmp_path: Path,
         for task_id, input_id in [("task1", "input1"), ("task1", "input2"), ("task2", "input1"), ("complete", "input1")]
     ]
 
-    with caplog.at_level(logging.INFO):
+    expected_error = failure == "get_task" or (failure == "restore" and role == "accepter")
+    with caplog.at_level(logging.INFO), pytest.raises(AnnofabCliException) if expected_error else nullcontext():
         main_obj.create(items, parallelism=parallelism)
 
-    assert sorted(updates) == [("task1", "input1"), ("task1", "input2"), ("task2", "input1")]
-    assert [input_id for task_id, input_id in updates if task_id == "task1"] == ["input1", "input2"]
+    expected_updates = [("task2", "input1")] if failure == "get_task" else [("task1", "input1"), ("task1", "input2"), ("task2", "input1")]
+    assert sorted(updates) == expected_updates
+    assert [input_id for task_id, input_id in updates if task_id == "task1"] == ([] if failure == "get_task" else ["input1", "input2"])
     for task_id, input_ids in [("task1", ["input1", "input2"]), ("task2", ["input1"])]:
         expected = ["current_operator", *input_ids, "old_operator"] if role == "accepter" else input_ids
+        if failure == "get_task" and task_id == "task1":
+            expected = []
         assert [event for event_task_id, event in events if event_task_id == task_id] == expected
     assert not (tmp_path / "complete").exists()
     assert "タスクが完了状態" in caplog.text
-    assert "3/4" in caplog.messages[-1]
+    assert ("1/4" if failure == "get_task" else "3/4") in caplog.messages[-1]
+    if expected_error:
+        assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
 
 
 def test_parallelism_requires_yes_before_accessing_api() -> None:

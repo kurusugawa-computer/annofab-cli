@@ -34,6 +34,7 @@ from annofabcli.common.cli import (
     get_json_from_args,
     get_list_from_args,
 )
+from annofabcli.common.exceptions import AnnofabCliException
 from annofabcli.common.facade import AnnofabApiFacade
 
 logger = logging.getLogger(__name__)
@@ -76,6 +77,9 @@ class CreateAnnotationCount:
 
     failed: int
     """作成に失敗またはスキップした件数。"""
+
+    task_failed: bool = False
+    """タスク処理で例外が発生したか。"""
 
 
 @dataclass(frozen=True)
@@ -273,6 +277,7 @@ class CreateAnnotationMain(CommandLineWithConfirm):
                 last_updated_datetime=task["updated_datetime"],
             )
 
+        task_failed = False
         try:
             success_count = 0
             failed_count = 0
@@ -285,16 +290,20 @@ class CreateAnnotationMain(CommandLineWithConfirm):
                 except Exception:
                     logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' :: アノテーションの作成に失敗しました。", exc_info=True)
                     failed_count += len(input_items)
-            return CreateAnnotationCount(success=success_count, failed=failed_count)
         finally:
             if should_change_operator:
                 logger.debug(f"task_id='{task_id}' :: 担当者を元に戻します。")
-                self.service.wrapper.change_task_operator(
-                    self.project_id,
-                    task_id,
-                    operator_account_id=old_account_id,
-                    last_updated_datetime=task["updated_datetime"],
-                )
+                try:
+                    self.service.wrapper.change_task_operator(
+                        self.project_id,
+                        task_id,
+                        operator_account_id=old_account_id,
+                        last_updated_datetime=task["updated_datetime"],
+                    )
+                except Exception:
+                    logger.warning(f"task_id='{task_id}' :: 担当者の復元に失敗しました。", exc_info=True)
+                    task_failed = True
+        return CreateAnnotationCount(success=success_count, failed=failed_count, task_failed=task_failed)
 
     def create(self, items: list[CreateAnnotationItem], *, parallelism: int | None = None) -> None:
         """タスク単位でアノテーションを作成する。
@@ -314,8 +323,13 @@ class CreateAnnotationMain(CommandLineWithConfirm):
             task_index, (task_id, items_by_input_data_id) = task_index_and_items
             logger.info(f"{task_index + 1} / {len(grouped_items)} 件目 :: task_id='{task_id}' :: アノテーションを作成します。")
             # 確認状態やAPIクライアントをタスク間で共有しない。
-            main_obj = copy.deepcopy(self) if parallelism is not None else self
-            return main_obj.create_for_task(task_id, items_by_input_data_id)
+            try:
+                main_obj = copy.deepcopy(self) if parallelism is not None else self
+                return main_obj.create_for_task(task_id, items_by_input_data_id)
+            except Exception:
+                logger.warning(f"task_id='{task_id}' :: タスクの処理に失敗しました。", exc_info=True)
+                annotation_count = sum(len(items) for items in items_by_input_data_id.values())
+                return CreateAnnotationCount(success=0, failed=annotation_count, task_failed=True)
 
         task_items = enumerate(grouped_items.items(), start=0)
         if parallelism is None:
@@ -328,6 +342,10 @@ class CreateAnnotationMain(CommandLineWithConfirm):
             success_count += count.success
             failed_count += count.failed
         logger.info(f"{success_count}/{len(items)} 件のアノテーションを作成しました。{failed_count}件のアノテーションは作成できませんでした。")
+
+        failed_task_count = sum(count.task_failed for count in results)
+        if failed_task_count:
+            raise AnnofabCliException(f"{failed_task_count} 件のタスクの処理に失敗しました。")
 
 
 class CreateAnnotation(CommandLine):
