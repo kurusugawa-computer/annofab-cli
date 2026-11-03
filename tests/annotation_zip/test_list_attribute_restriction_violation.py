@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import csv
 import json
 import zipfile
@@ -65,7 +66,7 @@ def test_imply_and_link_with_all_frame_annotations(specs: dict) -> None:
     )
     rows = ListAttributeRestrictionViolationMain(specs).validate_input_data(source)
     assert [(row["annotation_id"], row["restriction_index"]) for row in rows] == [("a1", 0), ("a3", 1)]
-    assert rows[0]["attribute_name_en"] == "comment"
+    assert rows[0]["attribute_name"] == "comment"
     assert rows[0]["attribute_value"] == ""
     assert rows[0]["restriction"] == specs["restrictions"][0]
     assert "unclear" in rows[0]["restriction_text"]
@@ -94,7 +95,7 @@ def test_failure_and_task_filter(specs: dict, tmp_path: Path, source_type: str) 
 
 
 def command(output: Path, output_format: str) -> ListAttributeRestrictionViolation:
-    args = argparse.Namespace(task_id=None, format=output_format, output=output, yes=False)
+    args = argparse.Namespace(task_id=None, format=output_format, output=output, yes=False, use_japanese_name=False)
     return ListAttributeRestrictionViolation(args)
 
 
@@ -146,15 +147,72 @@ def test_can_input_is_excluded(specs: dict) -> None:
     assert ListAttributeRestrictionViolationMain(specs).validate_input_data(annotation([detail("a1", comment="saved")])) == []
 
 
-def test_local_files_need_no_authentication(specs: dict, tmp_path: Path) -> None:
+@pytest.mark.parametrize("use_japanese_name", [False, True])
+def test_local_files_need_no_authentication(specs: dict, tmp_path: Path, *, use_japanese_name: bool) -> None:
     source = tmp_path / "annotations"
     write_annotation(source, "task1", "input1", [detail("a1", unclear=True)])
     specs_path = tmp_path / "specs.json"
     specs_path.write_text(json.dumps(specs))
     output = tmp_path / "violations.json"
-    args = argparse.Namespace(annotation=source, project_id=None, annotation_specs_json_file=specs_path, task_id=None, annotation_editor_type=None, output=output, format="json", yes=False)
+    args = argparse.Namespace(
+        annotation=source,
+        project_id=None,
+        annotation_specs_json_file=specs_path,
+        task_id=None,
+        annotation_editor_type=None,
+        output=output,
+        format="json",
+        yes=False,
+        use_japanese_name=use_japanese_name,
+    )
     command_module.main(args)
     assert json.loads(output.read_text())[0]["annotation_id"] == "a1"
+
+
+@pytest.mark.parametrize("output_format", ["csv", "json", "pretty_json"])
+def test_japanese_names(specs: dict, tmp_path: Path, output_format: str) -> None:
+    specs["labels"][0]["label_name"]["messages"].append({"lang": "ja-JP", "message": "車"})
+    specs["additionals"][0]["name"]["messages"].append({"lang": "ja-JP", "message": "不明瞭"})
+    specs["additionals"][1]["name"]["messages"].append({"lang": "ja-JP", "message": "状態"})
+    specs["additionals"][1].update(
+        type="select",
+        choices=[
+            {"choice_id": "ok", "name": name("ok")},
+            {"choice_id": "bad", "name": {"messages": [{"lang": "en-US", "message": "bad"}, {"lang": "ja-JP", "message": "不良"}]}},
+        ],
+    )
+    specs["restrictions"] = [{"additional_data_definition_id": "comment", "condition": {"_type": "Equals", "value": "ok"}}]
+    original_specs = copy.deepcopy(specs)
+    source = tmp_path / "annotations"
+    write_annotation(source, "task1", "input1", [detail("a1", comment="bad")])
+    output = tmp_path / "violations"
+    cli = command(output, output_format)
+    cli.args.use_japanese_name = True
+    cli.run(source, specs)
+    if output_format == "csv":
+        with output.open(encoding="utf-8-sig") as stream:
+            rows = list(csv.DictReader(stream))
+        rows[0]["restriction"] = json.loads(rows[0]["restriction"])
+    else:
+        rows = json.loads(output.read_text())
+    assert len(rows) == 1
+    assert rows[0]["label_name"] == "車"
+    assert rows[0]["attribute_name"] == "状態"
+    assert rows[0]["attribute_value"] == "不良"
+    assert "状態" in rows[0]["restriction_text"]
+    assert "ok" in rows[0]["restriction_text"]
+    assert rows[0]["restriction"] == specs["restrictions"][0]
+    assert specs == original_specs
+
+
+def test_japanese_names_preserve_free_text_and_fallback(specs: dict) -> None:
+    specs["additionals"][0]["name"]["messages"].append({"lang": "ja-JP", "message": "不明瞭"})
+    specs["restrictions"] = [{"additional_data_definition_id": "comment", "condition": {"_type": "Equals", "value": "expected"}}]
+    rows = ListAttributeRestrictionViolationMain(specs, use_japanese_name=True).validate_input_data(annotation([detail("a1", comment="free text")]))
+    assert rows[0]["label_name"] == "car"
+    assert rows[0]["attribute_name"] == "comment"
+    assert rows[0]["attribute_value"] == "free text"
+    assert "comment" in rows[0]["restriction_text"]
 
 
 def test_project_download_and_task_filter(specs: dict, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -185,6 +243,7 @@ def test_project_download_and_task_filter(specs: dict, tmp_path: Path, monkeypat
         yes=False,
         temp_dir=tmp_path / "download",
         latest=False,
+        use_japanese_name=False,
     )
     command_module.main(args)
     rows = json.loads(output.read_text())

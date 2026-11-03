@@ -35,10 +35,12 @@ JSON形式でも出力できます。
 ``--temp_dir`` でZIPのダウンロード先を指定できます。
 
 取得済みのZIPまたは展開ディレクトリを指定する場合は、``--project_id`` の代わりに
-``--annotation`` を使用し、検証に使うv3形式の仕様JSONを ``--annotation_specs_json_file`` で指定してください。
+``--annotation`` を使用し、:doc:`../annotation_specs/export` の出力を ``--annotation_specs_json_file`` で指定してください。
 この場合、認証とAPI通信は不要です。
 
 .. code-block:: bash
+
+    $ annofabcli annotation_specs export --project_id prj1 --output specs.json
 
     $ annofabcli annotation_zip list_attribute_restriction_violation \
         --annotation annotation.zip --annotation_specs_json_file specs.json \
@@ -53,7 +55,7 @@ JSON形式でも出力できます。
 出力内容
 =================================
 
-* ``label_name_en``、``attribute_name_en``: ラベル名と属性名（英語）。
+* ``label_name``、``attribute_name``: ラベル名と属性名。
 * ``attribute_value``: 保存されている属性値。未設定の場合はJSONではnull、CSVでは空欄です。
 * ``restriction_index``: 取得した仕様の ``restrictions`` 内の0始まりの位置。
 * ``restriction_type``: 制約の種類。属性間制約の場合は ``Imply`` です。
@@ -62,6 +64,16 @@ JSON形式でも出力できます。
 * ``annotation_editor_url``: 対象アノテーションを開くURL。
 
 CSVは違反0件でもヘッダを出力します。JSONは空配列を出力します。
+
+名前は英語で出力します。``--use_japanese_name`` を指定すると、ラベル名・属性名・選択肢名と
+``restriction_text`` 内の名前を日本語で出力します。日本語名がない場合は英語名を使用します。
+自由入力の文字列や ``restriction`` の内容は変換しません。
+``--annotation_specs_json_file`` を指定した場合は、そのファイルに登録された名前を使用します。
+
+.. code-block:: bash
+
+    $ annofabcli annotation_zip list_attribute_restriction_violation --project_id prj1 \
+        --use_japanese_name --output violations.csv
 
 判定仕様
 =================================
