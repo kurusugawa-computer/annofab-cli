@@ -135,7 +135,11 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
                 first_index += BATCH_SIZE
 
             with ThreadPoolExecutor(max_workers=self.parallelism) as executor:
-                list(executor.map(isolate_thread_call(partial_func), tmp_list))
+                worker = isolate_thread_call(partial_func)
+                futures = [executor.submit(worker, item) for item in tmp_list]
+            # 全バッチの実行を待ってから例外を伝える。後続の未開始バッチも試行する。
+            for future in futures:
+                future.result()
 
     def update_metadata_of_task(
         self,

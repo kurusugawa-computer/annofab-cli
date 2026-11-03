@@ -25,13 +25,13 @@ def test_metadata_overwrite_processes_all_batches_and_reports_errors(main_class)
         return {}, None
 
     service.api.patch_tasks_metadata.side_effect = patch_metadata
-    metadata = {f"task{index}": {"priority": index} for index in range(501)}
+    metadata = {f"task{index}": {"priority": index} for index in range(1501)}
     main_obj = main_class(service, is_overwrite_metadata=True, parallelism=2, all_yes=True)
 
     with pytest.raises(RuntimeError):
         main_obj.update_metadata_of_task("project1", metadata)
 
-    assert sorted(len(request) for request in requests) == [1, 500]
+    assert sorted(len(request) for request in requests) == [1, 500, 500, 500]
     assert {key: value for request in requests for key, value in request.items()} == metadata
 
 
