@@ -27,6 +27,7 @@ Available Commands
    delete
    delete_invalid_attribute_value
    delete_invalid_label_annotation
+   delete_per_annotation
    download
    dump
    export
