@@ -1,0 +1,33 @@
+[
+  {
+    "project_id": "prj1",
+    "task_id": "task1",
+    "input_data_id": "input1",
+    "annotation_id": "a1",
+    "label_name_en": "car",
+    "attribute_id": "comment",
+    "attribute_name_en": "comment",
+    "attribute_value": "",
+    "restriction_index": 0,
+    "restriction_type": "Imply",
+    "restriction_text": "If 'unclear' is checked, 'comment' is not empty.",
+    "restriction": {
+      "additional_data_definition_id": "comment",
+      "condition": {
+        "_type": "Imply",
+        "premise": {
+          "additional_data_definition_id": "unclear",
+          "condition": {
+            "_type": "Equals",
+            "value": "true"
+          }
+        },
+        "condition": {
+          "_type": "NotEquals",
+          "value": ""
+        }
+      }
+    },
+    "annotation_editor_url": "https://annofab.com/projects/prj1/tasks/task1/editor?#input1/a1"
+  }
+]

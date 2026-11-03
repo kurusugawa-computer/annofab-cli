@@ -32,6 +32,7 @@ Available Commands
    export
    import
    list
+   list_attribute_restriction_violation
    list_count
    merge_segmentation
    normalize_attribute_type

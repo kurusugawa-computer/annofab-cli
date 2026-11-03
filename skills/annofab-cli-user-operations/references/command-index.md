@@ -26,6 +26,7 @@
 - `annofabcli annotation export`: 指定したタスクのアノテーションを、アノテーションZIPと同じディレクトリ構成・JSON形式で書き出します。
 - `annofabcli annotation import`: アノテーションをインポートします。
 - `annofabcli annotation list`: アノテーションの一覧を出力します。
+- `annofabcli annotation list_attribute_restriction_violation`: アノテーション仕様の属性制約に違反するアノテーションを出力します。
 - `annofabcli annotation list_count`: task_idまたはinput_data_idで集約したアノテーションの個数を出力します。
 - `annofabcli annotation merge_segmentation`: 複数の塗りつぶしアノテーションを1つにまとめます。
 - `annofabcli annotation normalize_attribute_type`: アノテーションの属性値の型を、現在のアノテーション仕様に合わせます。
