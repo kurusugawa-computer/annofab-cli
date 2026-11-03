@@ -54,8 +54,11 @@ def test_thread_cancellation_reuses_members_and_recovers_from_prefetch_failure(c
 
     expected_account_id = "account1" if assign_last_acceptor else None
     assert sorted(cancellations) == [("task1", expected_account_id), ("task2", expected_account_id)]
-    expected_member_requests = (3 if prefetch_fails else 1) if assign_last_acceptor else 0
-    assert len(member_requests) == expected_member_requests
+    if assign_last_acceptor and prefetch_fails:
+        # 再取得後のキャッシュは共有する。同時に再取得を始めた場合は両スレッドが取得する。
+        assert 2 <= len(member_requests) <= 3
+    else:
+        assert len(member_requests) == (1 if assign_last_acceptor else 0)
     assert "2 / 2" in caplog.messages[-1]
     if prefetch_fails and assign_last_acceptor:
         assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)

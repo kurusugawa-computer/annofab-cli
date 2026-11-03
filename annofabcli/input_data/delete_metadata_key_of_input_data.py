@@ -24,7 +24,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.input_data._parallel import isolate_thread_call
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
@@ -114,12 +113,9 @@ class DeleteMetadataKeyOfInputDataMain(CommandLineWithConfirm):
             with ThreadPoolExecutor(max_workers=parallelism) as executor:
                 for initial_index, batch_input_data_id_list in enumerate(batched(input_data_id_list, BULK_REQUEST_SIZE)):
                     existing_input_data_dict = get_input_data_dict_in_bulk(self.service, self.project_id, batch_input_data_id_list)
-                    partial_func = partial(
-                        self.delete_metadata_keys_for_one_input_data_wrapper,
-                        metadata_keys=metadata_keys,
-                    )
+                    partial_func = partial(self.delete_metadata_keys_for_one_input_data_wrapper, metadata_keys=metadata_keys, existing_input_data_dict=existing_input_data_dict)
                     result_bool_list = executor.map(
-                        isolate_thread_call(partial_func, get_input_data_id=lambda item: item[1], existing_input_data_dict=existing_input_data_dict),
+                        partial_func,
                         enumerate(batch_input_data_id_list, start=initial_index * BULK_REQUEST_SIZE),
                     )
                     success_count += len([e for e in result_bool_list if e])

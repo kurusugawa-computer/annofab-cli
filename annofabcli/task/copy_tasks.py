@@ -22,7 +22,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.task._parallel import isolate_thread_call
 from annofabcli.utils.iterables import batched
 
 logger = logging.getLogger(__name__)
@@ -142,7 +141,7 @@ class CopyTasksMain(CommandLineWithConfirm):
                     task_id_list = [task_id for target in copy_target_batch for task_id in (target.src_task_id, target.dest_task_id)]
                     task_dict = get_task_dict_in_bulk(self.service, project_id, task_id_list)
                     partial_func = functools.partial(self.copy_task_wrapper, project_id=project_id, task_dict=task_dict)
-                    result_bool_list = list(executor.map(isolate_thread_call(partial_func), enumerate(copy_target_batch, start=initial_index * BULK_REQUEST_SIZE)))
+                    result_bool_list = list(executor.map(partial_func, enumerate(copy_target_batch, start=initial_index * BULK_REQUEST_SIZE)))
                     success_count += len([e for e in result_bool_list if e])
 
         else:

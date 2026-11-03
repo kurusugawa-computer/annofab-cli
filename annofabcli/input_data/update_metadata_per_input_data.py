@@ -23,7 +23,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.input_data._parallel import isolate_thread_call
 from annofabcli.input_data.utils import validate_metadata
 from annofabcli.utils.iterables import batched
 
@@ -116,13 +115,9 @@ class UpdateMetadataMain(CommandLineWithConfirm):
             with ThreadPoolExecutor(max_workers=parallelism) as executor:
                 for initial_index, batch_metadata_info_list in enumerate(batched(metadata_info_list, BULK_REQUEST_SIZE)):
                     existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [e.input_data_id for e in batch_metadata_info_list])
-                    partial_func = partial(
-                        self.set_metadata_to_input_data_wrapper,
-                        project_id=project_id,
-                        overwrite_metadata=overwrite_metadata,
-                    )
+                    partial_func = partial(self.set_metadata_to_input_data_wrapper, project_id=project_id, overwrite_metadata=overwrite_metadata, existing_input_data_dict=existing_input_data_dict)
                     result_bool_list = executor.map(
-                        isolate_thread_call(partial_func, get_input_data_id=lambda item: item[1].input_data_id, existing_input_data_dict=existing_input_data_dict),
+                        partial_func,
                         enumerate(batch_metadata_info_list, start=initial_index * BULK_REQUEST_SIZE),
                     )
                     success_count += len([e for e in result_bool_list if e])

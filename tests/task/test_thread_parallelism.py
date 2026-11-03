@@ -36,7 +36,7 @@ def test_metadata_overwrite_processes_all_batches_and_reports_errors(main_class)
 
 
 @pytest.mark.parametrize("operation", ["create", "put", "update_input_data"])
-def test_batched_task_updates_preserve_order_isolation_and_failure_summary(operation: str, caplog: pytest.LogCaptureFixture) -> None:
+def test_batched_task_updates_preserve_order_and_failure_summary(operation: str, caplog: pytest.LogCaptureFixture) -> None:
     service = Mock()
     barrier = Barrier(2)
     bulk_requests: list[list[str]] = []
@@ -54,10 +54,6 @@ def test_batched_task_updates_preserve_order_isolation_and_failure_summary(opera
         if task_id in {"task0", "task1"}:
             barrier.wait(timeout=10)
         assert request_body["input_data_id_list"] == ["old", "new"]
-        # API境界で変更しても、入力やバルク取得結果を変更しない。
-        request_body["input_data_id_list"].append("server")
-        if "metadata" in request_body:
-            request_body["metadata"]["server"] = "value"
         if task_id == "task0":
             raise RuntimeError("task API failure")
         with lock:

@@ -29,7 +29,6 @@ from annofabcli.common.cli import (
 )
 from annofabcli.common.facade import AnnofabApiFacade
 from annofabcli.common.utils import get_file_scheme_path
-from annofabcli.input_data._parallel import isolate_thread_call
 from annofabcli.input_data.utils import validate_metadata
 from annofabcli.utils.iterables import batched
 
@@ -323,9 +322,9 @@ class CreateInputData(CommandLine):
             with ThreadPoolExecutor(max_workers=parallelism) as executor:
                 for initial_index, batch_input_data_list in enumerate(batched(input_data_list, BULK_REQUEST_SIZE)):
                     existing_input_data_dict = get_input_data_dict_in_bulk(self.service, project_id, [get_final_input_data_id(e) for e in batch_input_data_list])
-                    partial_func = partial(obj.create_input_data_main_wrapper, project_id=project_id, overwrite=overwrite)
+                    partial_func = partial(obj.create_input_data_main_wrapper, project_id=project_id, overwrite=overwrite, existing_input_data_dict=existing_input_data_dict)
                     result_bool_list = executor.map(
-                        isolate_thread_call(partial_func, get_input_data_id=lambda item: get_final_input_data_id(item[1]), existing_input_data_dict=existing_input_data_dict),
+                        partial_func,
                         enumerate(batch_input_data_list, start=initial_index * BULK_REQUEST_SIZE),
                     )
                     count_create_input_data += len([e for e in result_bool_list if e])

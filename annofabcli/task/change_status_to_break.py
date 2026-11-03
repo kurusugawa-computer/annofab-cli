@@ -19,7 +19,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade, TaskQuery, match_task_with_query
-from annofabcli.task._parallel import isolate_thread_call
 
 logger = logging.getLogger(__name__)
 
@@ -129,7 +128,7 @@ class ChangeStatusToBreakMain(CommandLineWithConfirm):
                 task_query=task_query,
             )
             with ThreadPoolExecutor(max_workers=parallelism) as executor:
-                result_bool_list = list(executor.map(isolate_thread_call(partial_func), enumerate(task_id_list)))
+                result_bool_list = list(executor.map(partial_func, enumerate(task_id_list)))
                 success_count = len([e for e in result_bool_list if e])
 
         else:

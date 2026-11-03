@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import argparse
-import copy
 import logging
 import sys
-from typing import Any, Self
+from typing import Any
 
 import annofabapi
 from annofabapi.models import CommentType
@@ -26,19 +25,6 @@ class RejectTasksWithInspectionCommentsMain(RejectTasksMain):
         self.comments_for_task_list = comments_for_task_list
         """タスクごとの作成対象検査コメント"""
         self.comment_main = PutCommentMain(service, project_id=project_id, comment_type=CommentType.INSPECTION, all_yes=all_yes)
-
-    def _get_task_processor(self, _task_id: str) -> Self:
-        """対象タスクのコメントだけを持つ処理オブジェクトを作る。
-
-        Args:
-            _task_id: 対象タスクID。
-
-        Returns:
-            全タスク分のコメントを含めずに複製できる処理オブジェクト。
-        """
-        worker = copy.copy(self)
-        worker.comments_for_task_list = {_task_id: self.comments_for_task_list[_task_id]}
-        return worker
 
     def add_inspection_comment(self, project_id: str, task: dict[str, Any], inspection_comment: str) -> None:
         """指定したタスクに紐付く検査コメントを付与する。"""

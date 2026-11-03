@@ -23,7 +23,6 @@ from annofabcli.common.cli import (
     build_annofabapi_resource_and_login,
 )
 from annofabcli.common.facade import AnnofabApiFacade
-from annofabcli.task._parallel import isolate_thread_call
 
 logger = logging.getLogger(__name__)
 
@@ -140,8 +139,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
                 first_index += BATCH_SIZE
 
             with ThreadPoolExecutor(max_workers=self.parallelism) as executor:
-                worker = isolate_thread_call(partial_func)
-                futures = [executor.submit(worker, item) for item in tmp_list]
+                futures = [executor.submit(partial_func, item) for item in tmp_list]
             # 全バッチの実行を待ってから例外を伝える。後続の未開始バッチも試行する。
             for future in futures:
                 future.result()
@@ -168,7 +166,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
                 )
                 metadata_info_list = [TaskMetadataInfo(task_id, metadata) for task_id, metadata in metadata_by_task_id.items()]
                 with ThreadPoolExecutor(max_workers=self.parallelism) as executor:
-                    result_bool_list = list(executor.map(isolate_thread_call(partial_func), enumerate(metadata_info_list)))
+                    result_bool_list = list(executor.map(partial_func, enumerate(metadata_info_list)))
                     success_count = len([e for e in result_bool_list if e])
 
             else:
