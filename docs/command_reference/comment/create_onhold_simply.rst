@@ -33,17 +33,6 @@ Examples
 :doc:`create_onhold` の「休憩中状態・保留中状態のタスクに保留コメントを作成する」を参照してください。
 
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $ annofabcli comment create_onhold_simply --project_id prj1 --task_id t1 t2 t3 t4 \
-    --comment "枠がズレています。" --parallelism 4 --yes
-
-
 Usage Details
 =================================
 

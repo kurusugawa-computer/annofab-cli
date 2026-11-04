@@ -145,16 +145,6 @@ CSV形式で指定する場合
 
 
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $  annofabcli comment put_inspection --project_id prj1 --json file://comment.json \
-    --parallelism 4 --yes
-
 Usage Details
 =================================
 

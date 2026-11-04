@@ -231,18 +231,6 @@ biographyは ``category-`` で始まる仮名に置換します。同じ値は�
 
 
 
-並列処理
-----------------------------------------------
-
-``--project_id`` に複数のproject_idを指定したときは、並列実行が可能です。
-
-.. code-block::
-
-    $ annofabcli statistics visualize --project_id file://project_id.txt --output_dir out_dir/ \
-    --parallelism 4
-
-
-
 生産量のカスタマイズ
 =================================
 

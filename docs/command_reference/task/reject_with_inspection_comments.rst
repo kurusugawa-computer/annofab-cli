@@ -60,16 +60,6 @@ Examples
     $ annofabcli task reject_with_inspection_comments --project_id prj1 \
       --json file://inspection_comments.json --cancel_acceptance
 
-並列処理
---------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $ annofabcli task reject_with_inspection_comments --project_id prj1 \
-      --json file://inspection_comments.json --parallelism 4 --yes
-
 Usage Details
 =================================
 

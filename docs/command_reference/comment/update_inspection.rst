@@ -90,16 +90,6 @@ CSVの列は、JSONの各キーに対応しています。
 その他の列は省略でき、空欄も「変更なし」と扱います。
 本文を空にする場合やアノテーションとの紐付けを解除する場合は、JSON形式を使用してください。
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $ annofabcli comment update_inspection --project_id prj1 --json file://comment.json \
-    --parallelism 4 --yes
-
 Usage Details
 =================================
 
