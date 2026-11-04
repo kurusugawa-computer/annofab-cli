@@ -27,6 +27,7 @@ Available Commands
    add_labels
    change_attribute_type
    delete_attribute_restriction
+   delete_attribute_restriction_per_restriction
    delete_attributes
    delete_choices
    delete_inspection_phrases

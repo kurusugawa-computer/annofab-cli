@@ -12,6 +12,7 @@ import annofabcli.annotation_specs.add_label
 import annofabcli.annotation_specs.add_labels
 import annofabcli.annotation_specs.change_attribute_type
 import annofabcli.annotation_specs.delete_attribute_restriction
+import annofabcli.annotation_specs.delete_attribute_restriction_per_restriction
 import annofabcli.annotation_specs.delete_attributes
 import annofabcli.annotation_specs.delete_choices
 import annofabcli.annotation_specs.delete_inspection_phrases
@@ -58,6 +59,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     annofabcli.annotation_specs.add_labels.create_parser(subparsers)
     annofabcli.annotation_specs.change_attribute_type.create_parser(subparsers)
     annofabcli.annotation_specs.delete_attribute_restriction.create_parser(subparsers)
+    annofabcli.annotation_specs.delete_attribute_restriction_per_restriction.create_parser(subparsers)
     annofabcli.annotation_specs.delete_attributes.create_parser(subparsers)
     annofabcli.annotation_specs.delete_choices.create_parser(subparsers)
     annofabcli.annotation_specs.delete_inspection_phrases.create_parser(subparsers)

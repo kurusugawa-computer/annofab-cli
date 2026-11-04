@@ -2,15 +2,19 @@ from __future__ import annotations
 
 import copy
 import json
+from argparse import Namespace
 from pathlib import Path
 from typing import Any
+from unittest.mock import Mock
+
+import pytest
 
 from annofabcli.annotation_specs.delete_attribute_restriction import (
+    DeleteAttributeRestriction,
     build_request_body_for_delete_attribute_restriction,
     create_comment_for_delete_attribute_restriction,
     create_confirm_message_for_delete_attribute_restriction,
     resolve_restrictions_to_delete_by_attribute,
-    resolve_restrictions_to_delete_by_json,
 )
 from annofabcli.annotation_specs.restriction_type import matches_restriction_type
 
@@ -42,63 +46,6 @@ class TestDeleteAttributeRestrictionHelpers:
         assert matches_restriction_type(restriction, "imply") is True
         assert matches_restriction_type(restriction, "matches") is False
         assert matches_restriction_type(restriction, None) is True
-
-
-class TestDeleteRestrictionsByJson:
-    def test_resolve_restrictions_to_delete_by_json(self) -> None:
-        annotation_specs = load_annotation_specs()
-        restrictions = [
-            copy.deepcopy(annotation_specs["restrictions"][1]),
-            copy.deepcopy(annotation_specs["restrictions"][4]),
-        ]
-
-        actual = resolve_restrictions_to_delete_by_json(annotation_specs, restrictions)
-
-        assert actual.restrictions_to_remove == restrictions
-        assert actual.restriction_text_list == [
-            "'comment' DOES NOT EQUAL ''",
-            "'comment' MATCHES '[abc]+'",
-        ]
-
-    def test_resolve_restrictions_to_delete_by_json__存在しない制約はスキップする(self) -> None:
-        annotation_specs = load_annotation_specs()
-        restrictions = [
-            {
-                "additional_data_definition_id": "54fa5e97-6f88-49a4-aeb0-a91a15d11528",
-                "condition": {"value": "not-found", "_type": "Equals"},
-            }
-        ]
-
-        actual = resolve_restrictions_to_delete_by_json(annotation_specs, restrictions)
-
-        assert actual.restrictions_to_remove == []
-
-    def test_resolve_restrictions_to_delete_by_json__入力内の重複は1回だけ削除する(self) -> None:
-        annotation_specs = load_annotation_specs()
-        restriction = copy.deepcopy(annotation_specs["restrictions"][1])
-
-        actual = resolve_restrictions_to_delete_by_json(annotation_specs, [restriction, copy.deepcopy(restriction)])
-
-        assert actual.restrictions_to_remove == [restriction]
-
-    def test_build_request_body_for_delete_attribute_restriction(self) -> None:
-        annotation_specs = load_annotation_specs()
-        restrictions = [
-            copy.deepcopy(annotation_specs["restrictions"][1]),
-            copy.deepcopy(annotation_specs["restrictions"][4]),
-        ]
-        resolved = resolve_restrictions_to_delete_by_json(annotation_specs, restrictions)
-
-        actual = build_request_body_for_delete_attribute_restriction(
-            annotation_specs,
-            restrictions_to_remove=resolved.restrictions_to_remove,
-            restriction_text_list=resolved.restriction_text_list,
-            comment=None,
-        )
-
-        assert restrictions[0] not in actual["restrictions"]
-        assert restrictions[1] not in actual["restrictions"]
-        assert actual["comment"] == "以下の属性制約を削除しました。\n'comment' DOES NOT EQUAL ''\n'comment' MATCHES '[abc]+'"
 
 
 class TestDeleteRestrictionsByAttribute:
@@ -184,3 +131,37 @@ class TestDeleteRestrictionsByAttribute:
             "'comment' DOES NOT MATCH '[0-9]+'\n"
             "'comment' MATCHES '[0-9]' IF 'unclear' EQUALS 'true'"
         )
+
+
+@pytest.mark.parametrize("selection", ["id", "name"])
+@pytest.mark.parametrize("restriction_type", [None, "imply"])
+def test_command_deletes_only_matching_attribute_restrictions(selection, restriction_type):
+    service = Mock()
+    specs = load_annotation_specs()
+    original = copy.deepcopy(specs)
+    service.api.get_annotation_specs.return_value = (specs, None)
+    attribute_id = "54fa5e97-6f88-49a4-aeb0-a91a15d11528"
+    args = Namespace(
+        project_id="project1",
+        attribute_id=[attribute_id] if selection == "id" else None,
+        attribute_name_en=["comment"] if selection == "name" else None,
+        restriction_type=restriction_type,
+        comment="test change",
+        yes=True,
+    )
+    DeleteAttributeRestriction(service, Mock(), args).main()
+    body = service.api.put_annotation_specs.call_args.kwargs["request_body"]
+    expected = [item for item in original["restrictions"] if not (item["additional_data_definition_id"] == attribute_id and matches_restriction_type(item, restriction_type))]
+    assert body["restrictions"] == expected
+    assert body["comment"] == "test change"
+    assert body["last_updated_datetime"] == original["updated_datetime"]
+    assert specs == original
+
+
+def test_declining_attribute_deletion_keeps_specs(monkeypatch):
+    service = Mock()
+    service.api.get_annotation_specs.return_value = (load_annotation_specs(), None)
+    monkeypatch.setattr("builtins.input", lambda _message: "n")
+    args = Namespace(project_id="project1", attribute_id=None, attribute_name_en=["comment"], restriction_type=None, comment=None, yes=False)
+    DeleteAttributeRestriction(service, Mock(), args).main()
+    service.api.put_annotation_specs.assert_not_called()
