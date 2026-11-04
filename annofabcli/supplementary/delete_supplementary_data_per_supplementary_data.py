@@ -148,6 +148,9 @@ class DeleteSupplementaryDataPerSupplementaryData(CommandLine):
         """
         args = self.args
         if args.csv is not None:
+            if not args.csv.exists():
+                print(f"{self.COMMON_MESSAGE} argument --csv: ファイルパスが存在しません。 :: {args.csv}", file=sys.stderr)  # noqa: T201
+                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
             input_data_dict = get_input_data_supplementary_data_dict_from_csv(args.csv)
         else:
             supplementary_data_list = annofabcli.common.cli.get_json_from_args(args.json)

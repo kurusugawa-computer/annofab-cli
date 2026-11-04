@@ -74,3 +74,16 @@ def test_non_array_json_does_not_delete(supplementary_delete_service):
         DeleteSupplementaryDataPerSupplementaryData(service, AnnofabApiFacade(service), args).main()
     assert error.value.code == COMMAND_LINE_ERROR_STATUS_CODE
     service.api.delete_supplementary_data.assert_not_called()
+
+
+def test_missing_csv_reports_argument_error_before_accessing_api(supplementary_delete_service, tmp_path, capsys):
+    service = supplementary_delete_service
+    path = tmp_path / "missing.csv"
+    args = Namespace(project_id="project1", csv=path, json=None, yes=True)
+    with pytest.raises(SystemExit) as error:
+        DeleteSupplementaryDataPerSupplementaryData(service, AnnofabApiFacade(service), args).main()
+    assert error.value.code == COMMAND_LINE_ERROR_STATUS_CODE
+    stderr = capsys.readouterr().err
+    assert "--csv" in stderr
+    assert str(path) in stderr
+    assert service.mock_calls == []
