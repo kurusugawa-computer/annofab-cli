@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import argparse
 import copy
-import json
 import logging
-import sys
 from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Any
@@ -17,12 +15,10 @@ from annofabcli.annotation_specs.attribute_restriction import AttributeRestricti
 from annofabcli.annotation_specs.restriction_type import RESTRICTION_TYPE_TO_CONDITION_TYPE, matches_restriction_type
 from annofabcli.annotation_specs.utils import get_target_attributes
 from annofabcli.common.cli import (
-    COMMAND_LINE_ERROR_STATUS_CODE,
     ArgumentParser,
     CommandLine,
     CommandLineWithConfirm,
     build_annofabapi_resource_and_login,
-    get_json_from_args,
     get_list_from_args,
 )
 from annofabcli.common.facade import AnnofabApiFacade
@@ -69,52 +65,6 @@ def create_confirm_message_for_delete_attribute_restriction(restriction_text_lis
     lines = [f"以下の属性制約({len(restriction_text_list)}件)を削除します。よろしいですか？"]
     lines.extend(f" * {restriction_text}" for restriction_text in restriction_text_list)
     return "\n".join(lines)
-
-
-def resolve_restrictions_to_delete_by_json(
-    annotation_specs: dict[str, Any],
-    restrictions: list[dict[str, Any]],
-) -> ResolvedRestrictionsForDelete:
-    """
-    JSON指定で削除する属性制約を解決する。
-
-    Args:
-        annotation_specs: 既存のアノテーション仕様
-        restrictions: 削除対象の属性制約一覧
-
-    Returns:
-        解決済み削除対象
-    """
-    old_restrictions = annotation_specs["restrictions"]
-    message_obj = AttributeRestrictionMessage(
-        labels=annotation_specs["labels"],
-        additionals=annotation_specs["additionals"],
-        raise_if_not_found=True,
-    )
-
-    restrictions_to_remove = []
-    restriction_text_list = []
-    for index, restriction in enumerate(restrictions):
-        try:
-            restriction_text = message_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
-        except ValueError as e:
-            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、削除しません。 :: restriction=`{restriction}`, error_message=`{e!s}`")
-            continue
-
-        if restriction not in old_restrictions:
-            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないため、削除しません。 :: `{restriction_text}`")
-            continue
-        if restriction in restrictions_to_remove:
-            logger.warning(f"{index + 1}件目 :: 次の属性制約は入力内で重複しているため、削除しません。 :: `{restriction_text}`")
-            continue
-
-        restrictions_to_remove.append(restriction)
-        restriction_text_list.append(restriction_text)
-
-    return ResolvedRestrictionsForDelete(
-        restrictions_to_remove=restrictions_to_remove,
-        restriction_text_list=restriction_text_list,
-    )
 
 
 def build_request_body_for_delete_attribute_restriction(
@@ -205,38 +155,6 @@ class DeleteAttributeRestrictionMain(CommandLineWithConfirm):
         self.project_id = project_id
         CommandLineWithConfirm.__init__(self, all_yes)
 
-    def delete_restrictions_by_json(self, restrictions: list[dict[str, Any]], comment: str | None = None) -> bool:
-        """
-        指定したJSONと完全一致する属性制約を削除する。
-
-        Args:
-            restrictions: 削除対象の属性制約一覧
-            comment: 変更コメント
-
-        Returns:
-            更新を実行した場合はTrue、更新が不要または確認で中断した場合はFalse
-        """
-        old_annotation_specs, _ = self.service.api.get_annotation_specs(self.project_id, query_params={"v": "3"})
-        resolved_restrictions = resolve_restrictions_to_delete_by_json(old_annotation_specs, restrictions)
-
-        if len(resolved_restrictions.restrictions_to_remove) == 0:
-            logger.info("削除する属性制約はないため、アノテーション仕様を変更しません。")
-            return False
-
-        confirm_message = create_confirm_message_for_delete_attribute_restriction(resolved_restrictions.restriction_text_list)
-        if not self.confirm_processing(confirm_message):
-            return False
-
-        request_body = build_request_body_for_delete_attribute_restriction(
-            old_annotation_specs,
-            restrictions_to_remove=resolved_restrictions.restrictions_to_remove,
-            restriction_text_list=resolved_restrictions.restriction_text_list,
-            comment=comment,
-        )
-        self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"{len(resolved_restrictions.restrictions_to_remove)} 件の属性制約を削除しました。")
-        return True
-
     def delete_restrictions_by_attribute(
         self,
         *,
@@ -288,25 +206,9 @@ class DeleteAttributeRestriction(CommandLine):
     属性制約を削除するコマンド。
     """
 
-    COMMON_MESSAGE = "annofabcli annotation_specs delete_attribute_restriction: error:"
-
     def main(self) -> None:
         args = self.args
         obj = DeleteAttributeRestrictionMain(self.service, project_id=args.project_id, all_yes=args.yes)
-
-        if args.restriction_json is not None:
-            if args.restriction_type is not None:
-                print(  # noqa: T201
-                    f"{self.COMMON_MESSAGE} --restriction_json を指定した場合、 --restriction_type は指定できません。",
-                    file=sys.stderr,
-                )
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            restrictions = get_json_from_args(args.restriction_json)
-            if not isinstance(restrictions, list):
-                print(f"{self.COMMON_MESSAGE}: JSON形式が不正です。オブジェクトの配列を指定してください。", file=sys.stderr)  # noqa: T201
-                sys.exit(COMMAND_LINE_ERROR_STATUS_CODE)
-            obj.delete_restrictions_by_json(restrictions, comment=args.comment)
-            return
 
         attribute_ids = get_list_from_args(args.attribute_id) if args.attribute_id is not None else None
         attribute_name_ens = get_list_from_args(args.attribute_name_en) if args.attribute_name_en is not None else None
@@ -324,22 +226,6 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
 
     target_group = parser.add_mutually_exclusive_group(required=True)
 
-    sample_json = [
-        {
-            "additional_data_definition_id": "a1",
-            "condition": {"value": "true", "_type": "Equals"},
-        }
-    ]
-    target_group.add_argument(
-        "--restriction_json",
-        type=str,
-        help=(
-            "削除する属性制約情報のJSONを指定します。"
-            "JSON形式は ``list_attribute_restriction --format json`` の出力と同じです。\n"
-            f"(例) ``{json.dumps(sample_json)}``\n"
-            "``file://`` を先頭に付けるとjsonファイルを指定できます。"
-        ),
-    )
     target_group.add_argument(
         "--attribute_id",
         type=str,
@@ -367,7 +253,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
         type=str,
         choices=list(RESTRICTION_TYPE_TO_CONDITION_TYPE.keys()),
         help=(
-            "削除対象の属性制約種類。 ``--attribute_id`` または ``--attribute_name_en`` と併用したときだけ有効です。\n"
+            "削除対象の属性制約種類。指定しない場合は、対象属性のすべての種類の制約を削除します。\n"
             "* ``can_input`` : 入力可否制約\n"
             "* ``has_label`` : ラベル条件制約\n"
             "* ``equals`` : 等価制約\n"
@@ -392,7 +278,7 @@ def main(args: argparse.Namespace) -> None:
 def create_parser(subparsers: argparse._SubParsersAction | None = None) -> argparse.ArgumentParser:
     subcommand_name = "delete_attribute_restriction"
 
-    subcommand_help = "アノテーション仕様の属性制約を削除します。"
+    subcommand_help = "指定した属性に紐づくアノテーション仕様の属性制約を削除します。"
     description = subcommand_help
     parser = annofabcli.common.cli.create_parser(
         subparsers,

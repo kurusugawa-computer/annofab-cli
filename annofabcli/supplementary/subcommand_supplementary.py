@@ -3,6 +3,7 @@ import argparse
 import annofabcli.common.cli
 import annofabcli.supplementary.create_supplementary_data
 import annofabcli.supplementary.delete_supplementary_data
+import annofabcli.supplementary.delete_supplementary_data_per_supplementary_data
 import annofabcli.supplementary.list_supplementary_data
 import annofabcli.supplementary.put_supplementary_data
 import annofabcli.supplementary.update_supplementary_data
@@ -14,6 +15,7 @@ def parse_args(parser: argparse.ArgumentParser) -> None:
     # サブコマンドの定義
     annofabcli.supplementary.create_supplementary_data.create_parser(subparsers)
     annofabcli.supplementary.delete_supplementary_data.create_parser(subparsers)
+    annofabcli.supplementary.delete_supplementary_data_per_supplementary_data.create_parser(subparsers)
     annofabcli.supplementary.list_supplementary_data.create_parser(subparsers)
     annofabcli.supplementary.put_supplementary_data.create_parser(subparsers)
     annofabcli.supplementary.update_supplementary_data.create_parser(subparsers)

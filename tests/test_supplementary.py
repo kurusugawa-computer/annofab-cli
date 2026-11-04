@@ -91,6 +91,6 @@ class TestCommandLine:
                 "supplementary_data_id": supplementary_data_list[0]["supplementary_data_id"],
             }
         ]
-        main(["supplementary", "delete", "--project_id", project_id, "--json", json.dumps(json_args_delete), "--yes"])
+        main(["supplementary", "delete_per_supplementary_data", "--project_id", project_id, "--json", json.dumps(json_args_delete), "--yes"])
         supplementary_data_list, _ = annofab_service.api.get_supplementary_data_list(project_id, input_data_id)
         assert len(supplementary_data_list) == 0

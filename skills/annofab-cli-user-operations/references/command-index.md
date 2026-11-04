@@ -48,7 +48,8 @@
 - `annofabcli annotation_specs add_label`: アノテーション仕様にラベルを追加します。
 - `annofabcli annotation_specs add_labels`: アノテーション仕様にラベルを複数追加します。
 - `annofabcli annotation_specs change_attribute_type`: アノテーション仕様の既存属性の種類を変更します。
-- `annofabcli annotation_specs delete_attribute_restriction`: アノテーション仕様の属性制約を削除します。
+- `annofabcli annotation_specs delete_attribute_restriction`: 指定した属性に紐づくアノテーション仕様の属性制約を削除します。
+- `annofabcli annotation_specs delete_attribute_restriction_per_restriction`: JSONで個別指定したアノテーション仕様の属性制約を削除します。
 - `annofabcli annotation_specs delete_attributes`: アノテーション仕様のラベルから属性を削除します。
 - `annofabcli annotation_specs delete_choices`: アノテーション仕様の選択肢系属性から選択肢を削除します。
 - `annofabcli annotation_specs delete_inspection_phrases`: アノテーション仕様の定型指摘を複数件削除します。
@@ -267,7 +268,8 @@
 補助情報関係のサブコマンド
 
 - `annofabcli supplementary create`: 補助情報を作成します。
-- `annofabcli supplementary delete`: 補助情報を削除します。
+- `annofabcli supplementary delete`: 指定した入力データに紐づくすべての補助情報を削除します。
+- `annofabcli supplementary delete_per_supplementary_data`: ID一覧で指定した補助情報を削除します。
 - `annofabcli supplementary list`: 補助情報一覧を出力します。
 - `annofabcli supplementary put`: [DEPRECATED] 補助情報を登録します。
 - `annofabcli supplementary update`: 補助情報の名前、パス、種類、表示順を更新します。
