@@ -141,7 +141,7 @@ def get_history_id_from_before_index(service: annofabapi.Resource, project_id: s
         return None
 
     history = sorted_histories[before]
-    logger.info(f"{history['updated_datetime']}のアノテーション仕様を参照します。 :: history_id='{history['history_id']}', comment='{history.get('comment')}'")
+    logger.info(f"'{history['updated_datetime']}'のアノテーション仕様を参照します。 :: history_id='{history['history_id']}', comment='{history.get('comment')}'")
     return history["history_id"]
 
 
@@ -215,7 +215,7 @@ def resolve_history_id_or_exit(
         raise SystemExit(COMMAND_LINE_ERROR_STATUS_CODE)
 
     history = matched_histories[0]
-    logger.info(f"{history['updated_datetime']}のアノテーション仕様を参照します。 :: history_id='{history['history_id']}', comment='{history.get('comment')}'")
+    logger.info(f"'{history['updated_datetime']}'のアノテーション仕様を参照します。 :: history_id='{history['history_id']}', comment='{history.get('comment')}'")
     return history["history_id"]
 
 

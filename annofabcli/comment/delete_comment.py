@@ -81,13 +81,13 @@ class DeleteCommentMain(CommandLineWithConfirm):
         try:
             if task["account_id"] != self.service.api.account_id:
                 self.service.wrapper.change_task_operator(project_id, task_id, self.service.api.account_id)
-                logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
+                logger.debug(f"'{task_id}': 担当者を自分自身に変更しました。")
 
             changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
             return changed_task  # noqa: TRY300
 
         except requests.HTTPError:
-            logger.warning(f"{task_id}: 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
+            logger.warning(f"'{task_id}': 担当者の変更、または作業中状態への変更に失敗しました。", exc_info=True)
             raise
 
     def _can_delete_comment(
@@ -124,7 +124,7 @@ class DeleteCommentMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
             return 0
 
-        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, status = {task['status']}, phase = {task['phase']}, ")
+        logger.debug(f"{logging_prefix} : task_id = '{task['task_id']}', status = '{task['status']}', phase = '{task['phase']}', ")
 
         if not self._can_delete_comment(
             task=task,

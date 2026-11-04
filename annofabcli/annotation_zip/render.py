@@ -240,7 +240,7 @@ def draw_annotation_all(  # noqa: PLR0913
     success_count = 0
 
     for parser in iter_parser:
-        logger.debug(f"{parser.json_file_path} を読み込みます。")
+        logger.debug(f"'{parser.json_file_path}' を読み込みます。")
         if is_target_parser_func is not None and not is_target_parser_func(parser):
             continue
 
@@ -266,15 +266,15 @@ def draw_annotation_all(  # noqa: PLR0913
 
         try:
             drawing.main(parser, image_file=image_file, output_file=output_file, image_size=default_image_size)
-            logger.debug(f"{success_count + 1}件目: {output_file!s} を出力しました。image_file={image_file}, アノテーションJSON={parser.json_file_path}")
+            logger.debug(f"{success_count + 1}件目: '{output_file!s}' を出力しました。image_file='{image_file}', アノテーションJSON='{parser.json_file_path}'")
             success_count += 1
         except Exception:  # pylint: disable=broad-except
-            logger.warning(f"{parser.json_file_path} のアノテーションの描画に失敗しました。", exc_info=True)
+            logger.warning(f"'{parser.json_file_path}' のアノテーションの描画に失敗しました。", exc_info=True)
 
     logger.info(f"{success_count} / {total_count} 件、アノテーションを描画しました。")
 
     new_label_color_dict = {label_name: ImageColor.getrgb(color) if isinstance(color, str) else color for label_name, color in drawing.label_color_dict.items()}
-    logger.info(f"label_color={json.dumps(new_label_color_dict, ensure_ascii=False)}")
+    logger.info(f"label_color='{json.dumps(new_label_color_dict, ensure_ascii=False)}'")
 
 
 def read_input_data_id_csv(csv_path: Path) -> dict[str, str]:

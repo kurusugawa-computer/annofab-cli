@@ -245,7 +245,7 @@ class SumAnnotationDuration(CommandLine):
         if args.label_name is not None:
             labels, unknown = specs.get_label_keys_by_label_names(get_list_from_args(args.label_name))
             if unknown:
-                logger.warning(f"アノテーション仕様にないラベル名: {unknown}")
+                logger.warning(f"アノテーション仕様にないラベル名: '{unknown}'")
         attributes = self.get_attribute_names(specs, labels, by_attribute=by_attribute)
         options = DurationOptions(
             group_by=args.group_by,
@@ -326,7 +326,7 @@ class SumAnnotationDuration(CommandLine):
             if names is not None:
                 specified, unknown = specs.get_attribute_name_keys_by_attribute_names(get_list_from_args(names))
                 if unknown:
-                    logger.warning(f"アノテーション仕様にない属性名: {unknown}")
+                    logger.warning(f"アノテーション仕様にない属性名: '{unknown}'")
                 attributes = specified if args.attribute_name is not None else list(dict.fromkeys([*attributes, *specified]))
         return [key for key in attributes if key[0] in labels]
 

@@ -717,7 +717,7 @@ class CountAnnotationAttributeFilledMain:
             if target_label_names is not None:
                 target_label_names, not_found_names = annotation_specs.get_label_keys_by_label_names(target_label_names)
                 if len(not_found_names) > 0:
-                    logger.warning(f"指定されたラベル名のうち、アノテーション仕様に見つからなかったラベル名があります。 :: {not_found_names}")
+                    logger.warning(f"指定されたラベル名のうち、アノテーション仕様に見つからなかったラベル名があります。 :: '{not_found_names}'")
             if not include_flag_attribute:
                 target_attribute_names = annotation_specs.attribute_name_keys(excluded_attribute_types=[AdditionalDataDefinitionType.FLAG])
                 if target_label_names is not None:

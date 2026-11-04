@@ -44,7 +44,7 @@ class DeleteProjectMembersMain(CommandLineWithConfirm):
             logger.debug(f"{index} / {len(user_id_list)} 件目: user_id='{user_id}'")
             dest_member = get_project_member(user_id)
             if dest_member is None or dest_member["member_status"] == ProjectMemberStatus.INACTIVE.value:
-                logger.warning(f"{project_title}({project_id}) の有効なプロジェクトメンバに、user_id='{user_id}' は存在しないためスキップします。")
+                logger.warning(f"'{project_title}'('{project_id}') の有効なプロジェクトメンバに、user_id='{user_id}' は存在しないためスキップします。")
                 skipped_count += 1
                 continue
 

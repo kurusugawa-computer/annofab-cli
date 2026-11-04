@@ -331,7 +331,7 @@ class CollectingPerformanceInfo:
             try:
                 user_performance = project_dir.read_user_performance()
             except Exception:
-                logger.warning(f"{project_dir}からメンバごとの生産性と品質を読み込むのに失敗しました。", exc_info=True)
+                logger.warning(f"'{project_dir}'からメンバごとの生産性と品質を読み込むのに失敗しました。", exc_info=True)
                 continue
 
             if user_performance.is_empty():
@@ -464,7 +464,7 @@ def create_user_df(target_dir: Path) -> pandas.DataFrame:
         try:
             user_performance = project_dir.read_user_performance()
         except Exception:
-            logger.warning(f"{project_dir}からメンバごとの生産性と品質を読み込むのに失敗しました。", exc_info=True)
+            logger.warning(f"'{project_dir}'からメンバごとの生産性と品質を読み込むのに失敗しました。", exc_info=True)
             continue
 
         if user_performance.is_empty():

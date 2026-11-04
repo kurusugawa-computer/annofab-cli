@@ -79,12 +79,14 @@ def test_thread_updates_preserve_status_order_skip_and_logs(caplog: pytest.LogCa
     service.wrapper.change_task_status_to_break.side_effect = pause
     main_obj = ChangeStatusToBreakMain(service, all_yes=True, can_operate_other_task=True)
 
-    with caplog.at_level(logging.INFO):
+    with caplog.at_level(logging.DEBUG):
         main_obj.change_status_to_break("project1", ["task0", "task1", "complete"], parallelism=2)
 
     assert [state for task_id, state in events if task_id == "task0"] == ["working", "break"]
     assert [state for task_id, state in events if task_id == "task1"] == ["break"]
     assert sorted(updated) == (["task1"] if first_update_fails else ["task0", "task1"])
     assert f"{len(updated)} / 3" in caplog.text
+    assert "task_id = 'task1', タスクのステータスを休憩中に変更しました。" in caplog.text
     if first_update_fails:
         assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)
+        assert "タスク'task0'のステータスの変更に失敗しました。" in caplog.text

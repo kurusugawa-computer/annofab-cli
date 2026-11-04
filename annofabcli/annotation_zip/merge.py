@@ -174,7 +174,7 @@ class MergeAnnotationMain:
             else:
                 # annotation_path2に存在しないJSONを出力する
                 self.copy_annotation(parser1, output_json)
-            logger.debug(f"{output_json} を出力しました。")
+            logger.debug(f"'{output_json}' を出力しました。")
 
         if zip_file2 is not None:
             zip_file2.close()
@@ -191,7 +191,7 @@ class MergeAnnotationMain:
 
             output_json = output_dir / json_file_path2
             self.copy_annotation(parser2, output_json)
-            logger.debug(f"{output_json} を出力しました。")
+            logger.debug(f"'{output_json}' を出力しました。")
 
 
 class MergeAnnotation(CommandLineWithoutWebapi):

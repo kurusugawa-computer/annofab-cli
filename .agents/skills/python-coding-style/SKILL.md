@@ -12,6 +12,7 @@ description: Pythonコードを作成・修正するときに使用。テスト�
     * 特に理由がない限り、`object`や`Any`は避ける。
 * docstring は Google スタイルで記述する。`Args`と`Returns`は常に記載する。
 * ログメッセージやコメントは日本語で記述する。
+* ログにID、名前、パス、状態などの値を埋め込む場合は、`task_id='foo'`のように値を一重引用符で囲む。件数、進捗、所要時間など、文章中の数値は囲まない。
 * 戻り値をtupleで返そうとする場合は、`NamedTuple`, `dataclass`, pydantic modelの使用を検討して、本当にtupleが適切かどうかを判断する。
 * モジュールレベルの定数、クラス属性、インスタンス属性などには直後に docstring として記述する。VSCodeのtooltipに表示させるため。
 

@@ -33,7 +33,7 @@ class ListJob(CommandLine):
 
         query_params["type"] = job_type.value
 
-        logger.debug(f"query_params: {query_params}")
+        logger.debug(f"query_params: '{query_params}'")
         job_list = self.service.wrapper.get_all_project_job(project_id, query_params=query_params)
         return job_list
 

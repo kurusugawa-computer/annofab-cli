@@ -122,7 +122,7 @@ class ListTasksMain:
 
         def remove_key(arg_key: str) -> None:
             if arg_key in task_query:
-                logger.info(f"タスク検索クエリから、`{arg_key}`　キーを削除しました。")
+                logger.info(f"タスク検索クエリから、'{arg_key}'　キーを削除しました。")
                 task_query.pop(arg_key)
 
         remove_key("page")

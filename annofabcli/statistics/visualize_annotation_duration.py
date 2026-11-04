@@ -130,7 +130,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(f"以下の属性値は、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
+            logger.debug(f"以下の属性値は、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: '{set(df.columns) - set(columns)}'")
         df = df[columns]
 
     if bin_width is not None:  # noqa: SIM102
@@ -258,7 +258,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(f"以下のラベルは、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
+            logger.debug(f"以下のラベルは、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: '{set(df.columns) - set(columns)}'")
         df = df[columns]
 
     histogram_range = get_histogram_range(df)

@@ -253,7 +253,7 @@ class ListInputDataMain:
         if input_data_id_list is not None:
             input_data_list = self.get_input_data_from_input_data_id(input_data_id_list)
         else:
-            logger.debug(f"input_data_query: {input_data_query}")
+            logger.debug(f"input_data_query: '{input_data_query}'")
             input_data_list = self.service.wrapper.get_all_input_data_list(self.project_id, query_params=input_data_query)
 
         adding_obj = AddingDetailsToInputData(self.service, self.project_id)

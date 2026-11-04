@@ -299,7 +299,7 @@ def validate_new_attribute(
     duplicated_name_attribute_ids = [additional["additional_data_definition_id"] for additional in additionals if get_attribute_name_en(additional) == attribute_name_en]
     if duplicated_name_attribute_ids:
         duplicated_text = ", ".join(duplicated_name_attribute_ids)
-        logger.warning(f"属性名(英語)='{attribute_name_en}' の属性は既に存在しますが、処理を継続します。既存の属性ID: {duplicated_text}")
+        logger.warning(f"属性名(英語)='{attribute_name_en}' の属性は既に存在しますが、処理を継続します。既存の属性ID: '{duplicated_text}'")
     return duplicated_name_attribute_ids
 
 

@@ -205,7 +205,7 @@ class DiffProjects(CommandLine):
                 diff_message += f"ラベル名(en): {label_name} は差分あり\n{pprint.pformat(diff_result)}\n"
 
             else:
-                logger.debug(f"ラベル名(en): {label_name} は同じ")
+                logger.debug(f"ラベル名(en): '{label_name}' は同じ")
 
         if not is_different:
             logger.info("アノテーションラベルは同じ")
@@ -338,7 +338,7 @@ class DiffProjects(CommandLine):
     def diff(self, left_project_id: str, right_project_id: str, diff_targets: set[DiffTarget]) -> DiffResult:
         self.require_access_to_projects(left_project_id, right_project_id)
 
-        logger.info(f"=== {self.project_title1}({left_project_id}) と {self.project_title2}({right_project_id}) の差分を表示")
+        logger.info(f"=== '{self.project_title1}'('{left_project_id}') と '{self.project_title2}'('{right_project_id}') の差分を表示")
 
         diff_message = ""
         is_different = False

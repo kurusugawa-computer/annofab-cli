@@ -578,7 +578,7 @@ class UserPerformance:
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            logger.warning(f"データが0件のため、'{output_file}' は出力しません。")
             return False
         return True
 
@@ -917,7 +917,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
         element_list = self._create_productivity_element_list(worktime_type, production_volume_column)
         if metadata is not None:
             element_list.insert(0, create_pretext_from_metadata(metadata))
@@ -941,7 +941,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
         worktime_type_to_element_list = {worktime_type: self._create_productivity_element_list(worktime_type, production_volume_column) for worktime_type in self._get_worktime_type_list_for_plot()}
         element_list = self._create_worktime_type_select_layout(worktime_type_to_element_list)
         if metadata is not None:
@@ -964,7 +964,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
         production_volume_to_element_list = {}
         for production_volume in self._get_production_volume_list_for_plot():
             worktime_type_to_element_list = {worktime_type: self._create_productivity_element_list(worktime_type, production_volume.value) for worktime_type in self._get_worktime_type_list_for_plot()}
@@ -1017,7 +1017,7 @@ class UserPerformance:
                 ],
             )
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         scatter_obj_list = [
             create_scatter_obj(title="タスクあたり差し戻し回数とタスク数の関係", x_axis_label="タスク数", y_axis_label="タスクあたり差し戻し回数"),
@@ -1222,7 +1222,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
         element_list = self._create_quality_and_productivity_element_list(worktime_type, production_volume_column)
         if metadata is not None:
             element_list.insert(0, create_pretext_from_metadata(metadata))
@@ -1240,7 +1240,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
         worktime_type_to_element_list = {
             worktime_type: self._create_quality_and_productivity_element_list(worktime_type, production_volume_column) for worktime_type in self._get_worktime_type_list_for_plot()
         }
@@ -1260,7 +1260,7 @@ class UserPerformance:
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
         production_volume_to_element_list = {}
         for production_volume in self._get_production_volume_list_for_plot():
             worktime_type_to_element_list = {

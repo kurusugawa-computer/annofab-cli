@@ -397,7 +397,7 @@ def plot_annotation_duration_histogram_by_label(  # noqa: PLR0915
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(f"以下の属性値は、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
+            logger.debug(f"以下の属性値は、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: '{set(df.columns) - set(columns)}'")
         df = df[columns]
 
     if bin_width is not None:  # noqa: SIM102
@@ -525,7 +525,7 @@ def plot_annotation_duration_histogram_by_attribute(  # noqa: PLR0915
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(f"以下のラベルは、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
+            logger.debug(f"以下のラベルは、すべてのタスクで区間アノテーションの長さが0であるためヒストグラムを描画しません。 :: '{set(df.columns) - set(columns)}'")
         df = df[columns]
 
     histogram_range = get_histogram_range(df)
@@ -612,14 +612,14 @@ def get_duration_plot_data(
     if args.label_name is not None:
         labels, unknown = specs.get_label_keys_by_label_names(annofabcli.common.cli.get_list_from_args(args.label_name))
         if unknown:
-            logger.warning(f"アノテーション仕様にないラベル名: {unknown}")
+            logger.warning(f"アノテーション仕様にないラベル名: '{unknown}'")
     attributes = specs.selective_attribute_name_keys()
     if args.by_attribute:
         names = args.attribute_name if args.attribute_name is not None else args.additional_attribute_name
         if names is not None:
             specified, unknown = specs.get_attribute_name_keys_by_attribute_names(annofabcli.common.cli.get_list_from_args(names))
             if unknown:
-                logger.warning(f"アノテーション仕様にない属性名: {unknown}")
+                logger.warning(f"アノテーション仕様にない属性名: '{unknown}'")
             attributes = specified if args.attribute_name is not None else list(dict.fromkeys([*attributes, *specified]))
     attributes = [key for key in attributes if key[0] in labels]
     durations = ListAnnotationDurationByInputData(

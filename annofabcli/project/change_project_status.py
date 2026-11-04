@@ -77,7 +77,7 @@ class ChanegProjectStatusMain:
 
         def remove_key(arg_key: str) -> None:
             if arg_key in project_query:
-                logger.info(f"project_query から、`{arg_key}`　キーを削除しました。")
+                logger.info(f"project_query から、'{arg_key}'　キーを削除しました。")
                 project_query.pop(arg_key)
 
         remove_key("page")
@@ -91,7 +91,7 @@ class ChanegProjectStatusMain:
             if account_id is not None:
                 project_query["account_id"] = account_id
             else:
-                logger.warning(f"project_query に含まれている user_id: {user_id} のユーザが見つかりませんでした。")
+                logger.warning(f"project_query に含まれている user_id: '{user_id}' のユーザが見つかりませんでした。")
 
         if "except_user_id" in project_query:
             except_user_id = project_query["except_user_id"]
@@ -99,7 +99,7 @@ class ChanegProjectStatusMain:
             if except_account_id is not None:
                 project_query["except_account_id"] = except_account_id
             else:
-                logger.warning(f"project_query に含まれている except_user_id: {except_user_id} のユーザが見つかりませんでした。")
+                logger.warning(f"project_query に含まれている except_user_id: '{except_user_id}' のユーザが見つかりませんでした。")
 
         return project_query
 
@@ -197,7 +197,7 @@ class ChanegProjectStatusMain:
             self._change_status_for_project_list_in_parallel(project_id_list, status, force_suspend=force_suspend, parallelism=parallelism)
             return
 
-        logger.info(f"{len(project_id_list)} 件のプロジェクトのステータスを {status.value} に変更します。")
+        logger.info(f"{len(project_id_list)} 件のプロジェクトのステータスを '{status.value}' に変更します。")
         success_count = 0
         for project_id in project_id_list:
             try:
@@ -212,7 +212,7 @@ class ChanegProjectStatusMain:
                 else:
                     raise e  # noqa: TRY201
 
-        logger.info(f"{success_count} 件のプロジェクトのステータスを {status.value} に変更しました。")
+        logger.info(f"{success_count} 件のプロジェクトのステータスを '{status.value}' に変更しました。")
 
 
 class ChangeProjectStatus(CommandLine):

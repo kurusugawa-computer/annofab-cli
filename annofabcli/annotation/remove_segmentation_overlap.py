@@ -148,7 +148,7 @@ class RemoveSegmentationOverlapMain(CommandLineWithConfirm):
 
             logger.debug(
                 f"{log_message_prefix}{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新します。 :: "
-                f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id_list={updated_annotation_id_list}"
+                f"task_id='{task_id}', input_data_id='{input_data_id}', annotation_id_list='{updated_annotation_id_list}'"
             )
             if self.backup_dir is not None:
                 backup_path = self.backup_dir / task_id / f"{input_data_id}.json"

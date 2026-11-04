@@ -108,12 +108,12 @@ def is_duplicated_input_data(df: pandas.DataFrame) -> bool:
     df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
     result = False
     if len(df_duplicated_input_data_name) > 0:
-        logger.warning(f"'input_data_name'が重複しています。\n{df_duplicated_input_data_name['input_data_name'].unique()}")
+        logger.warning(f"'input_data_name'が重複しています。\n'{df_duplicated_input_data_name['input_data_name'].unique()}'")
         result = True
 
     df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
     if len(df_duplicated_input_data_path) > 0:
-        logger.warning(f"'input_data_path'が重複しています。\n{df_duplicated_input_data_path['input_data_path'].unique()}")
+        logger.warning(f"'input_data_path'が重複しています。\n'{df_duplicated_input_data_path['input_data_path'].unique()}'")
         result = True
 
     return result
@@ -141,7 +141,7 @@ def validate_no_duplicated_final_input_data_id(input_data_list: Sequence[CsvInpu
     df_duplicated_input_data_id = df[df["input_data_id"].duplicated()]
     if len(df_duplicated_input_data_id) > 0:
         duplicated_input_data_id_list = df_duplicated_input_data_id["input_data_id"].unique().tolist()
-        logger.warning(f"最終的な`input_data_id`が重複しています。\n{duplicated_input_data_id_list}")
+        logger.warning(f"最終的な`input_data_id`が重複しています。\n'{duplicated_input_data_id_list}'")
         raise ValueError("最終的な`input_data_id`が重複しています。")
 
 
@@ -343,13 +343,13 @@ class PutInputData(CommandLine):
         df = pandas.DataFrame(input_data_dict_list)
         df_duplicated_input_data_name = df[df["input_data_name"].duplicated()]
         if len(df_duplicated_input_data_name) > 0:
-            logger.warning(f"`input_data_name`が重複しています。\n{df_duplicated_input_data_name['input_data_name'].unique()}")
+            logger.warning(f"`input_data_name`が重複しています。\n'{df_duplicated_input_data_name['input_data_name'].unique()}'")
             if not allow_duplicated_input_data:
                 raise RuntimeError("`input_data_name`が重複しています。")
 
         df_duplicated_input_data_path = df[df["input_data_path"].duplicated()]
         if len(df_duplicated_input_data_path) > 0:
-            logger.warning(f"`input_data_path`が重複しています。\n{df_duplicated_input_data_path['input_data_path'].unique()}")
+            logger.warning(f"`input_data_path`が重複しています。\n'{df_duplicated_input_data_path['input_data_path'].unique()}'")
             if not allow_duplicated_input_data:
                 raise RuntimeError("`input_data_path`が重複しています。")
 

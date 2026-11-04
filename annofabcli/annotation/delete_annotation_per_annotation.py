@@ -71,7 +71,7 @@ class DeleteAnnotationPerAnnotationMain(CommandLineWithConfirm):
         task_id = editor_annotation["task_id"]
         input_data_id = editor_annotation["input_data_id"]
         if len(editor_annotation["details"]) == 0:
-            logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' にはアノテーションが存在しません。以下のアノテーションの削除をスキップします。 :: annotation_ids={annotation_ids}")
+            logger.warning(f"task_id='{task_id}', input_data_id='{input_data_id}' にはアノテーションが存在しません。以下のアノテーションの削除をスキップします。 :: annotation_ids='{annotation_ids}'")
             return DeleteResult(deleted=0, failed=len(annotation_ids))
 
         # annotation_idでフィルタ

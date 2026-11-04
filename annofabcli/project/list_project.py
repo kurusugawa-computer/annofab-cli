@@ -88,7 +88,7 @@ class ListProjectMain:
 
         def remove_key(arg_key: str) -> None:
             if arg_key in project_query:
-                logger.info(f"project_query から、`{arg_key}`　キーを削除しました。")
+                logger.info(f"project_query から、'{arg_key}'　キーを削除しました。")
                 project_query.pop(arg_key)
 
         remove_key("page")
@@ -102,7 +102,7 @@ class ListProjectMain:
             if account_id is not None:
                 project_query["account_id"] = account_id
             else:
-                logger.warning(f"project_query に含まれている user_id: {user_id} のユーザが見つかりませんでした。")
+                logger.warning(f"project_query に含まれている user_id: '{user_id}' のユーザが見つかりませんでした。")
 
         if "except_user_id" in project_query:
             except_user_id = project_query["except_user_id"]
@@ -110,7 +110,7 @@ class ListProjectMain:
             if except_account_id is not None:
                 project_query["except_account_id"] = except_account_id
             else:
-                logger.warning(f"project_query に含まれている except_user_id: {except_user_id} のユーザが見つかりませんでした。")
+                logger.warning(f"project_query に含まれている except_user_id: '{except_user_id}' のユーザが見つかりませんでした。")
 
         return project_query
 
@@ -122,7 +122,7 @@ class ListProjectMain:
         if project_query is not None:
             project_query = self._modify_project_query(organization_name, project_query)
 
-        logger.debug(f"project_query: {project_query}")
+        logger.debug(f"project_query: '{project_query}'")
         project_list = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params=project_query)
 
         for project in project_list:

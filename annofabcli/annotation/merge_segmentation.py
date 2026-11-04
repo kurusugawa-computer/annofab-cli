@@ -154,8 +154,8 @@ class MergeSegmentationMain(CommandLineWithConfirm):
                 f"{log_message_prefix}{len(updated_annotation_id_list)} 件の塗りつぶしアノテーションを更新して、"
                 f"{len(deleted_annotation_id_list)} 件の塗りつぶしアノテーションを削除します。 :: "
                 f"task_id='{task_id}', input_data_id='{input_data_id}', "
-                f"更新対象のannotation_id_list={updated_annotation_id_list}, "
-                f"削除対象のannotation_id_list={deleted_annotation_id_list}"
+                f"更新対象のannotation_id_list='{updated_annotation_id_list}', "
+                f"削除対象のannotation_id_list='{deleted_annotation_id_list}'"
             )
             if self.backup_dir is not None:
                 backup_path = self.backup_dir / task_id / f"{input_data_id}.json"

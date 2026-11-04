@@ -43,7 +43,7 @@ class User:
             raise ValueError(f"引数`df`には、{self.columns}の列が必要です。 :: {df.columns=}")
 
         if self._duplicated_keys(df):
-            logger.warning(f"引数`df`の`user_id`列または`account_id`が重複しています。 :: {df.columns=}")
+            logger.warning(f"引数`df`の`user_id`列または`account_id`が重複しています。 :: df.columns='{df.columns}'")
 
         self.df = df
 

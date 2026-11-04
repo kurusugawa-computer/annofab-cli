@@ -40,12 +40,12 @@ class InviteProjectMembersMain:
 
         success_count = 0
         skipped_count = 0
-        logger.info(f"{project_title}({project_id}) に {len(user_id_list)} 件のユーザを招待します。")
+        logger.info(f"'{project_title}'('{project_id}') に {len(user_id_list)} 件のユーザを招待します。")
         for index, user_id in enumerate(user_id_list, start=1):
             logger.debug(f"{index} / {len(user_id_list)} 件目: user_id='{user_id}'")
             dest_member = get_project_member(user_id)
             if dest_member is not None and dest_member["member_status"] == ProjectMemberStatus.ACTIVE.value:
-                logger.info(f"user_id='{user_id}' は既に {project_title}({project_id}) のメンバなのでスキップします。")
+                logger.info(f"user_id='{user_id}' は既に '{project_title}'('{project_id}') のメンバなのでスキップします。")
                 skipped_count += 1
                 continue
 
@@ -56,15 +56,15 @@ class InviteProjectMembersMain:
             }
             try:
                 self.service.api.put_project_member(project_id, user_id, request_body=request_body)
-                logger.debug(f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加しました。")
+                logger.debug(f"'{project_title}'('{project_id}') のプロジェクトメンバに、'{user_id}' を '{member_role.value}' ロールで追加しました。")
                 success_count += 1
             except requests.HTTPError:
                 logger.warning(
-                    f"{project_title}({project_id}) のプロジェクトメンバに、{user_id} を {member_role.value} ロールで追加できませんでした。",
+                    f"'{project_title}'('{project_id}') のプロジェクトメンバに、'{user_id}' を '{member_role.value}' ロールで追加できませんでした。",
                     exc_info=True,
                 )
 
-        logger.info(f"{project_title}({project_id}) への招待が完了しました。成功: {success_count} 件、スキップ: {skipped_count} 件、失敗: {len(user_id_list) - success_count - skipped_count} 件。")
+        logger.info(f"'{project_title}'('{project_id}') への招待が完了しました。成功: {success_count} 件、スキップ: {skipped_count} 件、失敗: {len(user_id_list) - success_count - skipped_count} 件。")
 
     def assign_role_with_organization(self, organization_name: str, user_id_list: list[str], member_role: ProjectMemberRole) -> None:
         projects = self.service.wrapper.get_all_projects_of_organization(organization_name, query_params={"account_id": self.service.api.account_id})
@@ -75,7 +75,7 @@ class InviteProjectMembersMain:
         for project_id in project_id_list:
             try:
                 if not self.facade.contains_any_project_member_role(project_id, [ProjectMemberRole.OWNER]):
-                    logger.warning(f"オーナではないため、プロジェクトメンバを招待できません。project_id = {project_id}")
+                    logger.warning(f"オーナではないため、プロジェクトメンバを招待できません。project_id = '{project_id}'")
                     continue
 
                 self.invite_project_members(project_id, user_id_list, member_role)

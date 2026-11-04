@@ -82,7 +82,7 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
 
         def preprocess() -> bool:
             if not match_task_with_query(task, task_query):
-                logger.debug(f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。 :: task_query={task_query}")
+                logger.debug(f"{logging_prefix} : task_id = '{task_id}' : `--task_query` の条件にマッチしないため、スキップします。 :: task_query='{task_query}'")
                 return False
 
             if not self.can_operate_other_task and task.account_id != self.service.api.account_id:
@@ -113,7 +113,7 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
         if task.account_id is not None:
             task_user_id = self.project_member_repository.get_user_id_from_account_id(self.project_id, task.account_id)
 
-        logger.debug(f"{logging_prefix}: task_id='{task_id}'のステータスを保留中に変更します。 :: status='{task.status.value}, phase='{task.phase.value}', user_id='{task_user_id}'")
+        logger.debug(f"{logging_prefix}: task_id='{task_id}'のステータスを保留中に変更します。 :: status='{task.status.value}', phase='{task.phase.value}', user_id='{task_user_id}'")
 
         task_last_updated_datetime = None
 
@@ -151,7 +151,7 @@ class ChangingStatusToOnHoldMain(CommandLineWithConfirm):
             return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} のステータスの保留中に変更するのに失敗しました。", exc_info=True)
+            logger.warning(f"{logging_prefix} : task_id = '{task_id}' のステータスの保留中に変更するのに失敗しました。", exc_info=True)
             # 作業中状態のまま放置すると、作業時間が増え続けるので、作業中状態ならば休憩中状態に変更する
             self.service.wrapper.change_task_status_to_break(self.project_id, task_id)
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のステータスを休憩中に変更しました。")

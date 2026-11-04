@@ -142,7 +142,8 @@ class DeleteSupplementaryDataMain(CommandLineWithConfirm):
             try:
                 self.service.api.delete_supplementary_data(project_id, input_data_id=input_data_id, supplementary_data_id=supplementary_data_id)
                 logger.debug(
-                    f"補助情報を削除しました。input_data_id='{input_data_id}', supplementary_data_id='{supplementary_data_id}', supplementary_data_name={supplementary_data['supplementary_data_name']}"
+                    f"補助情報を削除しました。input_data_id='{input_data_id}', supplementary_data_id='{supplementary_data_id}', "
+                    f"supplementary_data_name='{supplementary_data['supplementary_data_name']}'"
                 )
                 deleted_count += 1
             except requests.HTTPError:

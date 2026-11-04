@@ -317,7 +317,7 @@ class WorktimePerDate:
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            logger.warning(f"データが0件のため、'{output_file}' は出力しません。")
             return False
 
         return True
@@ -379,7 +379,7 @@ class WorktimePerDate:
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
@@ -458,7 +458,7 @@ class WorktimePerDate:
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df_cumulative[df_cumulative["user_id"] == user_id]
             if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                logger.debug(f"dataframe is empty. user_id = '{user_id}'")
                 continue
 
             source = ColumnDataSource(data=df_subset)

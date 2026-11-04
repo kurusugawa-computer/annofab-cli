@@ -32,10 +32,10 @@ class DeleteJobMain:
                 continue
             try:
                 self.service.api.delete_project_job(project_id, job_type.value, job_id)
-                logger.debug(f"job_type={job_type.value}, job_id='{job_id}' のジョブを削除しました。")
+                logger.debug(f"job_type='{job_type.value}', job_id='{job_id}' のジョブを削除しました。")
                 count += 1
             except Exception:  # pylint: disable=broad-except
-                logger.warning(f"job_type={job_type.value}, job_id='{job_id}' のジョブの削除に失敗しました。", exc_info=True)
+                logger.warning(f"job_type='{job_type.value}', job_id='{job_id}' のジョブの削除に失敗しました。", exc_info=True)
         logger.info(f"{count} / {len(job_id_list)} 件のジョブを削除しました。")
 
 

@@ -358,7 +358,7 @@ def build_request_body_for_add_attributes(
         target_label_names = [get_label_name_en(label) for label in resolved_input.target_labels]
         logger.debug(
             f"属性名(英語)='{resolved_input.attribute_input.attribute_name_en}', 属性ID='{resolved_input.new_attribute['additional_data_definition_id']}', "
-            f"対象ラベル={target_label_names} を追加します。"
+            f"対象ラベル='{target_label_names}' を追加します。"
         )
         insert_attribute_into_labels(
             request_body["labels"],
@@ -426,7 +426,7 @@ class AddAttributesMain(CommandLineWithConfirm):
             return False
 
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"{len(attribute_inputs)} 件の属性を追加しました。 :: attribute_name_ens={input_attribute_name_ens}")
+        logger.info(f"{len(attribute_inputs)} 件の属性を追加しました。 :: attribute_name_ens='{input_attribute_name_ens}'")
         return True
 
 

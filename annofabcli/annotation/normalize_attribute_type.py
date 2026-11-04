@@ -125,7 +125,7 @@ def create_normalized_request(editor_annotation: dict[str, Any], annotation_spec
             if converted != value:
                 changes.append({"definition_id": attribute_id, "value": converted})
                 result.changed += 1
-                logger.debug(f"annotation_id='{detail['annotation_id']}', attribute_id='{attribute_id}' :: {value['_type']} → {converted['_type']}")
+                logger.debug(f"annotation_id='{detail['annotation_id']}', attribute_id='{attribute_id}' :: '{value['_type']}' → '{converted['_type']}'")
         if changes:
             data = {key: editor_annotation[key] for key in ("project_id", "task_id", "input_data_id", "updated_datetime")}
             data.update(annotation_id=detail["annotation_id"], label_id=detail["label_id"], additional_data_list=changes)
@@ -253,7 +253,7 @@ class NormalizeAttributeType(CommandLine):
             backup_dir=Path(args.backup) if args.backup is not None else None,
             all_yes=args.yes,
         )
-        logger.info(f"{len(task_ids)} 件のタスクの属性型を正規化します。dry_run={args.dry_run}")
+        logger.info(f"{len(task_ids)} 件のタスクの属性型を正規化します。dry_run='{args.dry_run}'")
         if args.parallelism is not None:
             with ThreadPoolExecutor(max_workers=args.parallelism) as executor:
                 results = list(executor.map(main_obj.normalize_for_task, enumerate(dict.fromkeys(task_ids))))

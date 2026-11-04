@@ -377,7 +377,7 @@ class CreateAnnotation(CommandLine):
         if args.task_id is not None:
             items, not_existing_task_ids = filter_annotation_items_by_task_ids(items, get_list_from_args(args.task_id))
             if len(not_existing_task_ids) > 0:
-                logger.warning(f"'--task_id'で指定したタスクの内 {len(not_existing_task_ids)} 件は、作成対象データに含まれていません。 :: {sorted(not_existing_task_ids)}")
+                logger.warning(f"'--task_id'で指定したタスクの内 {len(not_existing_task_ids)} 件は、作成対象データに含まれていません。 :: '{sorted(not_existing_task_ids)}'")
 
         if args.backup is None:
             print("間違えてアノテーションを作成したときに復元できるようにするため、'--backup'でバックアップ用のディレクトリを指定することを推奨します。", file=sys.stderr)  # noqa: T201

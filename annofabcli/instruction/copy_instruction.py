@@ -48,10 +48,10 @@ class CopyInstruction(CommandLine):
 
         src_instruction_image_url: str | None = pq_img.attr["src"]
         if src_instruction_image_url is None:
-            logger.warning(f"{pq_img=} にsrc属性がないのでスキップします。")
+            logger.warning(f"pq_img='{pq_img}' にsrc属性がないのでスキップします。")
             return None
 
-        logger.debug(f"コピー元プロジェクトの {src_instruction_image_url} を、コピー先プロジェクトにアップロードします。")
+        logger.debug(f"コピー元プロジェクトの '{src_instruction_image_url}' を、コピー先プロジェクトにアップロードします。")
         instruction_image_id = self.get_instruction_image_id_from_url(src_instruction_image_url)
 
         try:

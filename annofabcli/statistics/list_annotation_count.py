@@ -950,7 +950,7 @@ class AnnotationSpecs:
         result = [to_label_name(label) for label in self._labels_v1]
         duplicated_labels = [key for key, value in collections.Counter(result).items() if value > 1]
         if len(duplicated_labels) > 0:
-            logger.warning(f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_labels}")
+            logger.warning(f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: '{duplicated_labels}'")
         return result
 
     def get_label_keys_by_label_names(self, label_names: Collection[str]) -> tuple[list[str], list[str]]:
@@ -995,7 +995,7 @@ class AnnotationSpecs:
 
         duplicated_attribute_names = [key for key, value in collections.Counter(result).items() if value > 1]
         if len(duplicated_attribute_names) > 0:
-            logger.warning(f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attribute_names}")
+            logger.warning(f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: '{duplicated_attribute_names}'")
 
         return result
 
@@ -1047,7 +1047,7 @@ class AnnotationSpecs:
         duplicated_attributes = [key for key, value in collections.Counter(target_attribute_value_keys).items() if value > 1]
         if len(duplicated_attributes) > 0:
             logger.warning(
-                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attributes}"
+                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: '{duplicated_attributes}'"
             )
 
         return target_attribute_value_keys
@@ -1553,13 +1553,13 @@ class ListAnnotationCount(CommandLine):
             # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
             additional_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
             if len(not_found_names) > 0:
-                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: '{not_found_names}'")
         elif args.attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.attribute_name)
             # アノテーション仕様から属性名を検索してAttributeNameKeyのリストに変換
             specified_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
             if len(not_found_names) > 0:
-                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: '{not_found_names}'")
 
         group_by = GroupBy(args.group_by)
         csv_type = CsvType(args.type)

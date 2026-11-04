@@ -51,7 +51,7 @@ class ChangeStatusToBreakMain(CommandLineWithConfirm):
         task: Task = Task.from_dict(dict_task)
 
         if not match_task_with_query(task, task_query):
-            logger.debug(f"{logging_prefix} : task_id = {task_id} : `--task_query` の条件にマッチしないため、スキップします。task_query={task_query}")
+            logger.debug(f"{logging_prefix} : task_id = '{task_id}' : `--task_query` の条件にマッチしないため、スキップします。task_query='{task_query}'")
             return False
 
         if not self.can_operate_other_task and task.account_id != self.service.api.account_id:
@@ -73,10 +73,10 @@ class ChangeStatusToBreakMain(CommandLineWithConfirm):
                 self.service.wrapper.change_task_status_to_working(project_id, task_id)
 
             self.service.wrapper.change_task_status_to_break(project_id, task_id)
-            logger.debug(f"{logging_prefix} : task_id = {task_id}, タスクのステータスを休憩中に変更しました。")
+            logger.debug(f"{logging_prefix} : task_id = '{task_id}', タスクのステータスを休憩中に変更しました。")
             return True  # noqa: TRY300
         except requests.exceptions.HTTPError:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} のステータスの変更に失敗しました。", exc_info=True)
+            logger.warning(f"{logging_prefix} : task_id = '{task_id}' のステータスの変更に失敗しました。", exc_info=True)
             return False
 
     def change_status_to_break_for_task_wrapper(

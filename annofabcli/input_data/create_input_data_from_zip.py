@@ -49,7 +49,7 @@ class CreateInputDataFromZip(CommandLine):
         """
 
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} に、{zip_file!s} を登録します。")
+        logger.info(f"'{project_title}' に、'{zip_file!s}' を登録します。")
 
         request_body = {}
         if input_data_name_prefix is not None:
