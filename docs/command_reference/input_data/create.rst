@@ -108,17 +108,6 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
 ``--metadata`` に指定した共通メタデータと、各入力データの ``metadata`` に同じキーがある場合は、各入力データの ``metadata`` が優先されます。
 
 
-並列処理
-----------------------------------------------
-
-``--csv`` または ``--json`` を指定したときは、並列実行が可能です。
-
-.. code-block::
-
-    $ annofabcli input_data create --project_id prj1 --csv input_data.csv \
-    --parallelism 4 --yes
-
-
 Usage Details
 =================================
 

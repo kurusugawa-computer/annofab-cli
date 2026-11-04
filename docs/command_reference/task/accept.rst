@@ -44,13 +44,6 @@ Examples
     $ annofabcli task accept --project_id prj1 --task_id file://task_id.txt \
     --phase inspection --task_query '{"status":"not_started"}'
 
-並列数4で実行するには、``--parallelism`` と ``--yes`` を指定します。
-
-.. code-block::
-
-    $ annofabcli task accept --project_id prj1 --task_id file://task_id.txt \
-    --phase acceptance --parallelism 4 --yes
-
 Usage Details
 =================================
 

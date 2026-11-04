@@ -73,16 +73,6 @@ Examples
      --user_id user1 --include_on_hold_task
 
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $  annofabcli task change_operator --project_id prj1 --task_id file://task.txt \
-    --user_id user1 --parallelism 4 --yes
-
 Usage Details
 =================================
 

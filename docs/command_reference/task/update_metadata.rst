@@ -169,21 +169,6 @@ Examples
      --metadata_by_task_id file://tmp.json
 
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $ annofabcli task update_metadata --project_id prj1 \
-     --task_id file://input_data_id.txt \
-     --metadata '{"category":"202010"}' --parallelism 4 --yes
-
-
-
-
-
 Usage Details
 =================================
 

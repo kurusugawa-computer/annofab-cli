@@ -118,16 +118,6 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
 
     
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $ annofabcli supplementary put --project_id prj1 --csv supplementary_data.csv \
-    --parallelism 4 --yes
-
 Usage Details
 =================================
 

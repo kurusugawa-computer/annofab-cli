@@ -106,16 +106,6 @@ JSONのキーは、``--csv`` に指定するCSVファイルの列に対応しま
 
 
 
-並列処理
-----------------------------------------------
-
-``--csv`` を指定したときは、並列実行が可能です。
-
-.. code-block::
-
-    $ annofabcli input_data put --project_id prj1 --csv input_data.csv \
-    --parallelism 4 --yes
-
 Usage Details
 =================================
 

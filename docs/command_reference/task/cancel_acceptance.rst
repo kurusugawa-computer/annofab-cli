@@ -63,16 +63,6 @@ Examples
     --task_query '{"no_user":true}'
 
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $  annofabcli task cancel_acceptance --project_id prj1 --task_id file://task.txt \
-    --parallelism 4 --yes
-
 Usage Details
 =================================
 

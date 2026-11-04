@@ -45,16 +45,6 @@ Examples
     過去のフェーズ・ステージで付与されたコメントは削除できません。
 
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $  annofabcli comment delete --project_id prj1 --json file://inspection_id.json \
-    --parallelism 4 --yes
-
 Usage Details
 =================================
 
