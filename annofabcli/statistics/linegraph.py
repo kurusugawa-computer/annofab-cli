@@ -287,9 +287,7 @@ def write_bokeh_graph(bokeh_obj: Any, output_file: Path) -> None:  # noqa: ANN40
     bokeh
     """
     output_file.parent.mkdir(exist_ok=True, parents=True)
-    bokeh.plotting.reset_output()
-    bokeh.plotting.output_file(output_file, title=output_file.stem)
-    bokeh.plotting.save(bokeh_obj)
+    bokeh.plotting.save(bokeh_obj, filename=output_file, title=output_file.stem, resources="cdn")
     logger.debug(f"'{output_file}'を出力しました。")
 
 
