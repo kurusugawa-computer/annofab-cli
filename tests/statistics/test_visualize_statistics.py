@@ -1,8 +1,5 @@
 import json
 import logging
-import subprocess
-import sys
-import textwrap
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Barrier
@@ -296,51 +293,3 @@ def test_parallel_graphs_keep_output_separate(graph_type: str, tmp_path: Path) -
         assert curstate().file is original_file
     finally:
         bokeh.plotting.reset_output()
-
-
-def test_interrupt_stops_parallel_update_wait(tmp_path: Path) -> None:
-    # SIGINTがpytest自体に届かないように、CLIと同じメインスレッドでの中断を別プロセスで検証する。
-    script = textwrap.dedent(
-        """\
-        import os
-        import signal
-        import sys
-        from pathlib import Path
-        from unittest.mock import Mock
-
-        from annofabcli.statistics.visualization.annotation_count_api import AnnotationCountSource
-        from annofabcli.statistics.visualization.filtering_query import FilteringQuery
-        from annofabcli.statistics.visualization.model import TaskCompletionCriteria
-        from annofabcli.statistics.visualize_statistics import VisualizingStatisticsMain
-
-        service = Mock()
-        service.api.get_project.side_effect = lambda project_id: ({"title": project_id, "input_data_type": "image"}, None)
-        service.api.get_my_member_in_project.return_value = ({"member_role": "owner"}, None)
-        service.api.post_project_tasks_update.return_value = ({"job": {"job_id": "job1"}}, None)
-        service.api.post_project_inputs_update.return_value = ({"job": {"job_id": "job2"}}, None)
-        service.api.post_annotation_archive_update.return_value = ({"job": {"job_id": "job3"}}, None)
-
-        def get_job(*args, **kwargs):
-            os.kill(os.getpid(), signal.SIGINT)
-            return {"list": [{"job_id": "job1", "job_status": "progress"}]}, None
-
-        service.api.get_project_job.side_effect = get_job
-        root = Path(sys.argv[1])
-        main = VisualizingStatisticsMain(
-            service,
-            temp_dir=root,
-            task_completion_criteria=TaskCompletionCriteria.ACCEPTANCE_COMPLETED,
-            filtering_query=FilteringQuery(),
-            annotation_count_source=AnnotationCountSource.ZIP,
-            download_latest=True,
-        )
-        try:
-            main.visualize_statistics_for_project_list(["prj1", "prj2"], root / "out", parallelism=1)
-        except KeyboardInterrupt:
-            assert service.api.get_my_member_in_project.call_count == 1
-            assert not (root / "out" / "prj2").exists()
-        else:
-            raise AssertionError("中断要求が呼び出し元に伝播しませんでした。")
-        """
-    )
-    subprocess.run([sys.executable, "-c", script, str(tmp_path)], check=True, timeout=15)

@@ -11,7 +11,6 @@ import annofabapi
 import requests
 from annofabapi.models import JobStatus, ProjectJobType
 
-from annofabcli.common.cancellation import Cancellation
 from annofabcli.common.dataclasses import WaitOptions
 from annofabcli.common.exceptions import DownloadingFileNotFoundError, UpdatedFileForDownloadingError
 
@@ -48,10 +47,8 @@ class UpdateJob:
 
 
 class DownloadingFile:
-    def __init__(self, service: annofabapi.Resource, *, cancellation: Cancellation | None = None) -> None:
+    def __init__(self, service: annofabapi.Resource) -> None:
         self.service = service
-        self.cancellation = cancellation
-        """更新待機を中断するための共有状態。"""
 
     def update_download_files(self, project_ids: Collection[str], targets: Collection[DownloadFileTarget], *, wait_options: WaitOptions | None = None) -> None:
         """指定したダウンロード用ファイルを並列に更新し、すべての完了を待つ。
@@ -88,8 +85,6 @@ class DownloadingFile:
             for target in unique_targets:
                 log_prefix = f"project_id='{project_id}', target='{target.value}'"
                 try:
-                    if self.cancellation is not None:
-                        self.cancellation.check()
                     job_id = self.request_update(project_id, job_types[target])
                     jobs.append(UpdateJob(project_id, target, job_id))
                 except Exception:
@@ -171,25 +166,13 @@ class DownloadingFile:
         max_wait_minutes = self.get_max_wait_minutes(wait_options)
         filetype = DOWNLOADING_FILETYPE_DICT[job_type]
         logger.info(f"{filetype}の更新処理が完了するまで、最大{max_wait_minutes}分間待ちます。job_id='{job_id}'")
-        if self.cancellation is None:
-            result = self.service.wrapper.wait_until_job_finished(
-                project_id,
-                job_type=job_type,
-                job_id=job_id,
-                job_access_interval=wait_options.interval,
-                max_job_access=wait_options.max_tries,
-            )
-        else:
-            result = None
-            for index in range(wait_options.max_tries):
-                self.cancellation.check()
-                jobs = self.service.api.get_project_job(project_id, query_params={"type": job_type.value})[0]["list"]
-                job = next((job for job in jobs if job["job_id"] == job_id), None)
-                result = JobStatus(job["job_status"]) if job is not None else None
-                if result != JobStatus.PROGRESS:
-                    break
-                if index + 1 < wait_options.max_tries:
-                    self.cancellation.wait(wait_options.interval)
+        result = self.service.wrapper.wait_until_job_finished(
+            project_id,
+            job_type=job_type,
+            job_id=job_id,
+            job_access_interval=wait_options.interval,
+            max_job_access=wait_options.max_tries,
+        )
         if result != JobStatus.SUCCEEDED:
             raise UpdatedFileForDownloadingError(f"{filetype}の更新処理が{max_wait_minutes}分以内に完了しない、または更新処理に失敗しました。")
 
