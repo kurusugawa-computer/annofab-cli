@@ -499,7 +499,7 @@ class AddLabelsMain(CommandLineWithConfirm):
             return False
 
         self.service.api.put_annotation_specs(self.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"{len(label_inputs)} 件のラベルを追加しました。 :: label_name_ens={input_label_name_ens}, annotation_types={annotation_types}")
+        logger.info(f"{len(label_inputs)} 件のラベルを追加しました。 :: label_name_ens='{input_label_name_ens}', annotation_types='{annotation_types}'")
         return True
 
 

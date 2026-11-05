@@ -86,7 +86,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
         other_task_list = [e for e in task_list if e["task_id"] != task_id and input_data_id in e["input_data_id_list"]]
         if len(other_task_list) > 0:
             other_task_id_list = [e["task_id"] for e in other_task_list]
-            logger.info(f"task_id='{task_id}' :: input_data_id='{input_data_id}'の入力データは、他のタスクから参照されているため、削除しません。 :: 参照しているタスク = {other_task_id_list}")
+            logger.info(f"task_id='{task_id}' :: input_data_id='{input_data_id}'の入力データは、他のタスクから参照されているため、削除しません。 :: 参照しているタスク = '{other_task_id_list}'")
             return False
 
         input_data, _ = self.service.api.get_input_data(self.project_id, input_data_id)
@@ -124,7 +124,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
                 return False
 
         if not match_task_with_query(Task.from_dict(task), task_query):
-            logger.debug(f"{log_prefix} :: `--task_query`の条件にマッチしないため、スキップします。task_query={task_query}")
+            logger.debug(f"{log_prefix} :: `--task_query`の条件にマッチしないため、スキップします。task_query='{task_query}'")
             return False
 
         if not self.confirm_delete_task(task_id):  # noqa: SIM103
@@ -159,7 +159,7 @@ class DeleteTaskMain(CommandLineWithConfirm):
             logger.warning(f"{log_prefix} :: タスクは存在しません。")
             return False
 
-        logger.debug(f"{log_prefix} :: status={task['status']}, phase={task['phase']}, updated_datetime={task['updated_datetime']}")
+        logger.debug(f"{log_prefix} :: status='{task['status']}', phase='{task['phase']}', updated_datetime='{task['updated_datetime']}'")
 
         if not self._should_delete_task(task, log_prefix, task_query=task_query):
             return False

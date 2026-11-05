@@ -144,5 +144,5 @@ class TaskMetadataPerformance:
 
     def to_csv(self, output_file: Path) -> None:
         """CSVを出力する。"""
-        logger.debug(f"{output_file!s} を出力します。")
+        logger.debug(f"'{output_file!s}' を出力します。")
         print_csv(self.df.reindex(columns=pandas.MultiIndex.from_tuples(self.columns)), output_file)

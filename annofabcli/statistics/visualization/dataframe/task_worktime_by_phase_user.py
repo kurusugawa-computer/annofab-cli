@@ -132,7 +132,7 @@ class TaskWorktimeByPhaseUser:
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            logger.warning(f"データが0件のため、'{output_file}' は出力しません。")
             return False
         return True
 

@@ -108,9 +108,9 @@ class FilterAnnotationZip:
                         zip_file.extract(outer_annotation_file, str(output_dir))
                 count += 1
                 if count % 10000 == 0:
-                    logger.debug(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を {output_dir} に展開しました。")
+                    logger.debug(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を '{output_dir}' に展開しました。")
 
-            logger.info(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を {output_dir} に展開しました。")
+            logger.info(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を '{output_dir}' に展開しました。")
 
     @staticmethod
     def filter_annotation_dir(annotation_dir: Path, filter_query: FilterQuery, output_dir: Path) -> None:
@@ -132,9 +132,9 @@ class FilterAnnotationZip:
 
             count += 1
             if count % 10000 == 0:
-                logger.debug(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を {output_dir} をコピーしました。")
+                logger.debug(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を '{output_dir}' をコピーしました。")
 
-        logger.debug(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を {output_dir} をコピーしました。")
+        logger.debug(f"{count} 件のJSONファイルとそれに紐づく塗りつぶし画像を '{output_dir}' をコピーしました。")
 
     @staticmethod
     def create_filter_query(args: argparse.Namespace) -> FilterQuery:

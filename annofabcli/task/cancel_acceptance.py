@@ -71,7 +71,7 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
                 return False
 
             if task["phase"] != TaskPhase.ACCEPTANCE.value or task["status"] != TaskStatus.COMPLETE.value:
-                logger.warning(f"{logging_prefix}: task_id = {task_id} は受入完了でありません。status = {task['status']}, phase={task['phase']}")
+                logger.warning(f"{logging_prefix}: task_id = '{task_id}' は受入完了でありません。status = '{task['status']}', phase='{task['phase']}'")
                 return False
 
             actual_acceptor: User | None = None
@@ -84,32 +84,32 @@ class CancelAcceptanceMain(CommandLineWithConfirm):
                         actual_acceptor = User(account_id=member["account_id"], user_id=member["user_id"], username=member["username"])
                     else:
                         logger.warning(
-                            f"{logging_prefix}: task_id = {task_id} の最後の受入フェーズを担当したユーザ"
+                            f"{logging_prefix}: task_id = '{task_id}' の最後の受入フェーズを担当したユーザ"
                             f"（account_id='{acceptor_account_id}'）は、プロジェクトメンバーでないので、担当者を割り当てません。"
                         )
             else:
                 actual_acceptor = acceptor
 
             if not match_task_with_query(Task.from_dict(task), task_query):
-                logger.debug(f"{logging_prefix} : task_id = {task_id} : TaskQueryの条件にマッチしないため、スキップします。")
+                logger.debug(f"{logging_prefix} : task_id = '{task_id}' : TaskQueryの条件にマッチしないため、スキップします。")
                 return False
 
             if not self.confirm_processing(f"{logging_prefix}: task_id = {task_id} のタスクの受入完了状態を取り消しますか？ "):
                 return False
 
             logger.debug(
-                f"{logging_prefix}: task_id = {task_id} のタスクの受入完了状態を取り消します。タスクの担当者は {actual_acceptor.username}({actual_acceptor.user_id}) です。"
+                f"{logging_prefix}: task_id = '{task_id}' のタスクの受入完了状態を取り消します。タスクの担当者は '{actual_acceptor.username}'('{actual_acceptor.user_id}') です。"
                 if actual_acceptor is not None
                 else "タスクの担当者は未割り当てです。"
             )
 
             operator_account_id = actual_acceptor.account_id if actual_acceptor is not None else None
             self.service.wrapper.cancel_completed_task(self.project_id, task_id, operator_account_id=operator_account_id)
-            logger.info(f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しが成功しました。")
+            logger.info(f"{logging_prefix} : task_id = '{task_id}' の受け入れ取り消しが成功しました。")
             return True  # noqa: TRY300
 
         except requests.exceptions.HTTPError:
-            logger.warning(f"{logging_prefix} : task_id = {task_id} の受け入れ取り消しに失敗しました。", exc_info=True)
+            logger.warning(f"{logging_prefix} : task_id = '{task_id}' の受け入れ取り消しに失敗しました。", exc_info=True)
             return False
 
     def cancel_acceptance_for_wrapper(

@@ -67,7 +67,7 @@ def fill_annotation(
 
     color = label_color_dict.get(annotation.label)
     if color is None:
-        logger.warning(f"label_name = {annotation.label} のcolorが指定されていません。")
+        logger.warning(f"label_name = '{annotation.label}' のcolorが指定されていません。")
         color = (255, 255, 255)
 
     data_type = data["_type"]
@@ -85,7 +85,7 @@ def fill_annotation(
         if outer_image is not None:
             draw.bitmap([0, 0], outer_image, fill=color)
         else:
-            logger.warning(f"アノテーション種類が`{data_type}`ですが、`outer_image`がNoneです。 annotation_id='{annotation.annotation_id}'")
+            logger.warning(f"アノテーション種類が'{data_type}'ですが、`outer_image`がNoneです。 annotation_id='{annotation.annotation_id}'")
 
     return draw
 
@@ -334,9 +334,9 @@ def write_annotation_images_from_path(
 
     count_created_image = 0
     for parser in iter_lazy_parser:
-        logger.debug(f"{parser.json_file_path} を読み込みます。")
+        logger.debug(f"'{parser.json_file_path}' を読み込みます。")
         if is_target_parser_func is not None and not is_target_parser_func(parser):
-            logger.debug(f"{parser.json_file_path} の画像化をスキップします。")
+            logger.debug(f"'{parser.json_file_path}' の画像化をスキップします。")
             continue
 
         output_image_file = output_dir_path / f"{Path(parser.json_file_path).stem}.{output_image_extension}"
@@ -356,5 +356,5 @@ def write_annotation_images_from_path(
         logger.debug(f"画像ファイル '{output_image_file!s}' を生成しました。")
         count_created_image += 1
 
-    logger.info(f"{output_dir_path!s} に、{count_created_image} 件の画像ファイルを生成しました。")
+    logger.info(f"'{output_dir_path!s}' に、{count_created_image} 件の画像ファイルを生成しました。")
     return True

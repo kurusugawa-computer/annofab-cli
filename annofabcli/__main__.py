@@ -94,7 +94,7 @@ def main(arguments: list[str] | None = None) -> None:
                 argv = sys.argv
                 if arguments is not None:
                     argv = ["annofabcli", *list(arguments)]
-                logger.info(f"argv={mask_sensitive_value_in_argv(argv)}")
+                logger.info(f"argv='{mask_sensitive_value_in_argv(argv)}'")
             args.subcommand_func(args)
         except AnnofabCliException as e:
             logger.error("%s", e)  # noqa: TRY400

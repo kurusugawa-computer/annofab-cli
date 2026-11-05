@@ -82,7 +82,7 @@ class CopyProject(CommandLine):
         src_project_title = self.facade.get_project_title(src_project_id)
 
         if copied_targets is not None:
-            logger.info(f"コピー対象: {[e.value for e in copied_targets]}")
+            logger.info(f"コピー対象: '{[e.value for e in copied_targets]}'")
         else:
             logger.info("コピー対象: None")
 

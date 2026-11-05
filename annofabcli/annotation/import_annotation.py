@@ -312,7 +312,7 @@ class AnnotationConverter:
             try:
                 specs_additional_data: dict[str, Any] = dict(self.annotation_specs_accessor.get_attribute(attribute_name=attribute_name, label=label))
             except ValueError as e:
-                logger.warning(f"アノテーション仕様に属性名(英語)が'{attribute_name}'である属性情報が存在しないか、複数存在します。 :: {log_message_suffix} :: error={e}")
+                logger.warning(f"アノテーション仕様に属性名(英語)が'{attribute_name}'である属性情報が存在しないか、複数存在します。 :: {log_message_suffix} :: error='{e}'")
                 if self.is_strict:
                     raise
                 continue
@@ -359,7 +359,7 @@ class AnnotationConverter:
         try:
             label_info: dict[str, Any] = dict(self.annotation_specs_accessor.get_label(label_name=detail.label))
         except ValueError as e:
-            logger.warning(f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix} :: error={e}")
+            logger.warning(f"アノテーション仕様にラベル名(英語)が'{detail.label}'であるラベル情報が存在しないか、または複数存在します。 :: {log_message_suffix} :: error='{e}'")
             raise
 
         if detail.attributes is not None:
@@ -643,26 +643,26 @@ class ImportAnnotationMain(CommandLineWithConfirm):
             return False
 
         if self.task_query is not None and not match_task_with_query(Task.from_dict(task), self.task_query):
-            logger.debug(f"{logger_prefix}`--task_query`の条件に一致しないため、処理をスキップします。 :: task_query={self.task_query}")
+            logger.debug(f"{logger_prefix}`--task_query`の条件に一致しないため、処理をスキップします。 :: task_query='{self.task_query}'")
             return False
 
         logger.debug(f"{logger_prefix}phase='{task['phase']}', status='{task['status']}'")
         if task["status"] == TaskStatus.WORKING.value:
-            logger.info(f"{logger_prefix}タスクは作業中のため、処理をスキップします。 :: status={task['status']}")
+            logger.info(f"{logger_prefix}タスクは作業中のため、処理をスキップします。 :: status='{task['status']}'")
             return False
 
         if not self.include_complete_task and task["status"] == TaskStatus.COMPLETE.value:
-            logger.info(f"{logger_prefix}タスクは完了状態のため、処理をスキップします。完了状態のタスクを処理する場合は、 '--include_complete_task'を指定してください。 :: status={task['status']}")
+            logger.info(f"{logger_prefix}タスクは完了状態のため、処理をスキップします。完了状態のタスクを処理する場合は、 '--include_complete_task'を指定してください。 :: status='{task['status']}'")
             return False
 
         if not self.include_break_task and task["status"] == TaskStatus.BREAK.value:
-            logger.info(f"{logger_prefix}タスクは休憩中状態のため、処理をスキップします。休憩中状態のタスクを処理する場合は、 '--include_break_task'を指定してください。 :: status={task['status']}")
+            logger.info(f"{logger_prefix}タスクは休憩中状態のため、処理をスキップします。休憩中状態のタスクを処理する場合は、 '--include_break_task'を指定してください。 :: status='{task['status']}'")
             return False
 
         if not self.include_on_hold_task and task["status"] == TaskStatus.ON_HOLD.value:
             logger.info(
                 f"{logger_prefix}タスクは保留中状態のため、処理をスキップします。保留中状態のタスクにアノテーションをインポートする場合は、 "
-                f"'--include_on_hold_task'を指定してください。 :: status={task['status']}"
+                f"'--include_on_hold_task'を指定してください。 :: status='{task['status']}'"
             )
             return False
 
@@ -751,7 +751,7 @@ class ImportAnnotationMain(CommandLineWithConfirm):
                     task_count += 1
 
         if target_task_ids is not None and len(tmp_target_task_ids) > 0:
-            logger.warning(f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、インポート対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}")
+            logger.warning(f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、インポート対象のアノテーションデータに含まれていません。 :: '{tmp_target_task_ids}'")
 
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをインポートしました。")
 

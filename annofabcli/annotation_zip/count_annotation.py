@@ -614,14 +614,14 @@ class CountAnnotation(CommandLine):
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.additional_attribute_name)
             additional_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
             if len(not_found_names) > 0:
-                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: '{not_found_names}'")
             return additional_attribute_names, None
 
         if args.attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.attribute_name)
             specified_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
             if len(not_found_names) > 0:
-                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: '{not_found_names}'")
             return None, specified_attribute_names
 
         return None, None
@@ -634,7 +634,7 @@ class CountAnnotation(CommandLine):
         label_name_list = annofabcli.common.cli.get_list_from_args(self.args.label_name)
         target_label_names, not_found_names = annotation_specs.get_label_keys_by_label_names(label_name_list)
         if len(not_found_names) > 0:
-            logger.warning(f"指定されたラベル名のうち、アノテーション仕様に見つからなかったラベル名があります。 :: {not_found_names}")
+            logger.warning(f"指定されたラベル名のうち、アノテーション仕様に見つからなかったラベル名があります。 :: '{not_found_names}'")
         return target_label_names
 
 

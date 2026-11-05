@@ -923,7 +923,7 @@ class AnnotationSpecs:
         result = [to_label_name(label) for label in self._labels_v1]
         duplicated_labels = [key for key, value in collections.Counter(result).items() if value > 1]
         if len(duplicated_labels) > 0:
-            logger.warning(f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_labels}")
+            logger.warning(f"アノテーション仕様のラベル英語名が重複しています。アノテーション個数が正しく算出できない可能性があります。:: '{duplicated_labels}'")
         return result
 
     def get_label_keys_by_label_names(self, label_names: Collection[str]) -> tuple[list[str], list[str]]:
@@ -968,7 +968,7 @@ class AnnotationSpecs:
 
         duplicated_attribute_names = [key for key, value in collections.Counter(result).items() if value > 1]
         if len(duplicated_attribute_names) > 0:
-            logger.warning(f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attribute_names}")
+            logger.warning(f"アノテーション仕様の属性情報（ラベル英語名、属性英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: '{duplicated_attribute_names}'")
 
         return result
 
@@ -1020,7 +1020,7 @@ class AnnotationSpecs:
         duplicated_attributes = [key for key, value in collections.Counter(target_attribute_value_keys).items() if value > 1]
         if len(duplicated_attributes) > 0:
             logger.warning(
-                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: {duplicated_attributes}"
+                f"アノテーション仕様の属性情報（ラベル英語名、属性英語名、選択肢英語名）が重複しています。アノテーション個数が正しく算出できない可能性があります。:: '{duplicated_attributes}'"
             )
 
         return target_attribute_value_keys

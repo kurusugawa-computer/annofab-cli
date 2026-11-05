@@ -86,7 +86,7 @@ class UpdateMetadataOfTaskMain(CommandLineWithConfirm):
         request_body = {task_id: new_metadata}
         self.service.api.patch_tasks_metadata(project_id, request_body=request_body)
 
-        logger.debug(f"{logging_prefix}タスクのメタデータを更新しました。 :: 新しいmetadata={json.dumps(new_metadata)}")
+        logger.debug(f"{logging_prefix}タスクのメタデータを更新しました。 :: 新しいmetadata='{json.dumps(new_metadata)}'")
         return True
 
     def set_metadata_to_task_wrapper(self, tpl: tuple[int, TaskMetadataInfo], project_id: str) -> bool:

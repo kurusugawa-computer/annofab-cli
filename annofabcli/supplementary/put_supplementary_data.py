@@ -287,7 +287,7 @@ class PutSupplementaryData(CommandLine):
         """
 
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} に、{len(supplementary_data_list)} 件の補助情報を登録します。")
+        logger.info(f"'{project_title}' に、{len(supplementary_data_list)} 件の補助情報を登録します。")
 
         count_put_supplementary_data = 0
 
@@ -304,7 +304,7 @@ class PutSupplementaryData(CommandLine):
                 if result:
                     count_put_supplementary_data += 1
 
-        logger.info(f"{project_title} に、{count_put_supplementary_data} / {len(supplementary_data_list)} 件の補助情報を登録しました。")
+        logger.info(f"'{project_title}' に、{count_put_supplementary_data} / {len(supplementary_data_list)} 件の補助情報を登録しました。")
 
     @staticmethod
     def get_supplementary_data_list_from_dict(supplementary_data_dict_list: list[dict[str, Any]]) -> list[CliSupplementaryData]:

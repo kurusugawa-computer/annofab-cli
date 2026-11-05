@@ -116,7 +116,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
         self.service.api.batch_update_comments(task.project_id, task.task_id, input_data_id, request_body=request_body)
 
-        logger.debug(f"{task.task_id}, {input_data_id}, {len(comment_list)}件 検査コメントの状態を変更")
+        logger.debug(f"'{task.task_id}', '{input_data_id}', {len(comment_list)}件 検査コメントの状態を変更")
 
     def get_unprocessed_inspection_list(self, task: Task, input_data_id: str) -> list[Inspection]:
         """
@@ -272,7 +272,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
         if unprocessed_inspection_count > 0:
             assert inspection_status is not None
-            logger.debug(f"task_id='{task.task_id}' :: 未処置の検査コメント {unprocessed_inspection_count} 件を、{inspection_status.value} 状態にします。")
+            logger.debug(f"task_id='{task.task_id}' :: 未処置の検査コメント {unprocessed_inspection_count} 件を、'{inspection_status.value}' 状態にします。")
             for input_data_id, unprocessed_inspection_list in unprocessed_inspection_list_dict.items():
                 if len(unprocessed_inspection_list) == 0:
                     continue
@@ -315,7 +315,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
             return False
 
         if not match_task_with_query(task, task_query):
-            logger.debug(f"task_id='{task.task_id}' は `--task_query` の条件にマッチしないため、スキップします。 :: task_query={task_query}")
+            logger.debug(f"task_id='{task.task_id}' は `--task_query` の条件にマッチしないため、スキップします。 :: task_query='{task_query}'")
             return False
         return True
 
@@ -338,7 +338,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
             return False
 
         task: Task = Task.from_dict(dict_task)
-        logger.info(f"{logging_prefix} :: タスク情報 task_id='{task_id}', phase={task.phase.value}, phase_stage={task.phase_stage}, status={task.status.value}")
+        logger.info(f"{logging_prefix} :: タスク情報 task_id='{task_id}', phase='{task.phase.value}', phase_stage='{task.phase_stage}', status='{task.status.value}'")
         if not self._validate_task(task, target_phase=target_phase, target_phase_stage=target_phase_stage, task_query=task_query):
             return False
 
@@ -407,7 +407,7 @@ class CompleteTasksMain(CommandLineWithConfirm):
 
         project_title = self.facade.get_project_title(project_id)
         phase_name = f"'{target_phase.value}'フェーズ" if target_phase is not None else "検査または受入フェーズ"
-        logger.info(f"{project_title} のタスク {len(task_id_list)} 件に対して、{phase_name}を次のフェーズに進めます。")
+        logger.info(f"'{project_title}' のタスク {len(task_id_list)} 件に対して、{phase_name}を次のフェーズに進めます。")
 
         success_count = 0
 

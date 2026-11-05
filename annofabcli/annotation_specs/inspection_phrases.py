@@ -231,7 +231,7 @@ class EditInspectionPhrases(CommandLine):
         if not self.confirm_processing(f"{len(target_ids)} 件の定型指摘を{operation_name}します。 :: inspection_phrase_ids={target_ids}。よろしいですか？"):
             return
         self.service.api.put_annotation_specs(args.project_id, query_params={"v": "3"}, request_body=request_body)
-        logger.info(f"{len(target_ids)} 件の定型指摘を{operation_name}しました。 :: inspection_phrase_ids={target_ids}")
+        logger.info(f"{len(target_ids)} 件の定型指摘を{operation_name}しました。 :: inspection_phrase_ids='{target_ids}'")
 
 
 def add_edit_arguments(parser: argparse.ArgumentParser, *, operation: Operation) -> None:

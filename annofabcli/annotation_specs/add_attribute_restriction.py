@@ -71,14 +71,14 @@ def resolve_restrictions_to_add(
         try:
             restriction_text = msg_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
         except ValueError as e:
-            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、アノテーション仕様に追加しません。 :: restriction=`{restriction}`, error_message=`{e!s}`")
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、アノテーション仕様に追加しません。 :: restriction='{restriction}', error_message='{e!s}'")
             continue
 
         if restriction in old_restrictions:
-            logger.warning(f"{index + 1}件目 :: 次の属性制約は既に存在するため、アノテーション仕様に追加しません。  :: `{restriction_text}`")
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は既に存在するため、アノテーション仕様に追加しません。  :: '{restriction_text}'")
             continue
         if restriction in new_restrictions:
-            logger.warning(f"{index + 1}件目 :: 次の属性制約は入力内で重複しているため、アノテーション仕様に追加しません。 :: `{restriction_text}`")
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は入力内で重複しているため、アノテーション仕様に追加しません。 :: '{restriction_text}'")
             continue
 
         new_restrictions.append(restriction)
@@ -144,7 +144,7 @@ class AddAttributeRestrictionMain(CommandLineWithConfirm):
             if not self.confirm_processing(f"次の属性制約を追加しますか？ :: `{restriction_text}`"):
                 continue
 
-            logger.debug(f"次の属性制約を追加します。 :: `{restriction_text}`")
+            logger.debug(f"次の属性制約を追加します。 :: '{restriction_text}'")
             confirmed_restrictions.append(restriction)
             confirmed_restriction_text_list.append(restriction_text)
 

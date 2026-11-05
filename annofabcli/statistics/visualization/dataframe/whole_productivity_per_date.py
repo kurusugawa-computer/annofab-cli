@@ -104,7 +104,7 @@ class WholeProductivityPerCompletedDate:
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            logger.warning(f"データが0件のため、'{output_file}' は出力しません。")
             return False
         return True
 
@@ -543,7 +543,7 @@ class WholeProductivityPerCompletedDate:
 
         add_velocity_columns(df)
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         phase_prefix = [
             ("actual_worktime", "実績作業時間"),
@@ -783,7 +783,7 @@ class WholeProductivityPerCompletedDate:
             *self.custom_production_volume_list,
         ]
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         source = ColumnDataSource(data=df)
         production_volume_line_graph, production_volume_select = create_production_volume_line_graph(production_volume_list)
@@ -1001,7 +1001,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            logger.warning(f"データが0件のため、'{output_file}' は出力しません。")
             return False
         return True
 
@@ -1325,7 +1325,7 @@ class WholeProductivityPerFirstAnnotationStartedDate:
         df["dt_first_annotation_started_date"] = df["first_annotation_started_date"].map(lambda e: parse(e).date())
         add_velocity_and_weekly_moving_average_columns(df)
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         source = ColumnDataSource(data=df)
 

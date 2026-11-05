@@ -329,7 +329,7 @@ class CreateSupplementaryData(CommandLine):
         """補助情報を一括で作成する。"""
 
         project_title = self.facade.get_project_title(project_id)
-        logger.info(f"{project_title} に、{len(supplementary_data_list)} 件の補助情報を作成します。")
+        logger.info(f"'{project_title}' に、{len(supplementary_data_list)} 件の補助情報を作成します。")
 
         count_create_supplementary_data = 0
 
@@ -360,7 +360,7 @@ class CreateSupplementaryData(CommandLine):
                     count_create_supplementary_data += 1
                 self.log_progress(index, len(supplementary_data_list))
 
-        logger.info(f"{project_title} に、{count_create_supplementary_data} / {len(supplementary_data_list)} 件の補助情報を作成しました。")
+        logger.info(f"'{project_title}' に、{count_create_supplementary_data} / {len(supplementary_data_list)} 件の補助情報を作成しました。")
 
     @staticmethod
     def get_supplementary_data_list_from_dict(supplementary_data_dict_list: list[dict[str, Any]]) -> list[CliSupplementaryData]:

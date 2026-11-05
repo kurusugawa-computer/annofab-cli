@@ -331,7 +331,7 @@ def build_annofabapi_resource(args: argparse.Namespace) -> annofabapi.Resource:
     """
     endpoint_url = get_endpoint_url(args)
     if endpoint_url != DEFAULT_ENDPOINT_URL:
-        logger.info(f"Annofab WebAPIのエンドポイントURL: {endpoint_url}")
+        logger.info(f"Annofab WebAPIのエンドポイントURL: '{endpoint_url}'")
 
     kwargs = {"endpoint_url": endpoint_url, "input_mfa_code_via_stdin": True}
 

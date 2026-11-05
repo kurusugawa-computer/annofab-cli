@@ -89,7 +89,7 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            logger.warning(f"データが0件のため、'{output_file}' は出力しません。")
             return False
         return True
 
@@ -178,14 +178,14 @@ class AbstractPhaseProductivityPerDate(abc.ABC):
             x_axis_label=x_axis_label,
         )
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         line_count = 0
         plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                logger.debug(f"dataframe is empty. user_id = '{user_id}'")
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
@@ -826,14 +826,14 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             x_axis_label=x_axis_label,
         )
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         line_count = 0
         plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                logger.debug(f"dataframe is empty. user_id = '{user_id}'")
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
@@ -956,14 +956,14 @@ class AnnotatorProductivityPerDate(AbstractPhaseProductivityPerDate):
             (x_column, f"inspection_comment_count/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
         ]
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         line_count = 0
         plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                logger.debug(f"dataframe is empty. user_id = '{user_id}'")
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
@@ -1092,14 +1092,14 @@ class InspectorProductivityPerDate(AbstractPhaseProductivityPerDate):
             (x_column, f"inspection_worktime_minute/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
         ]
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         line_count = 0
         plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                logger.debug(f"dataframe is empty. user_id = '{user_id}'")
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)
@@ -1231,14 +1231,14 @@ class AcceptorProductivityPerDate(AbstractPhaseProductivityPerDate):
             (x_column, f"acceptance_worktime_minute/{production_volume_column}{WEEKLY_MOVING_AVERAGE_COLUMN_SUFFIX}"),
         ]
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         line_count = 0
         plotted_users: list[tuple[str, str]] = []
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                logger.debug(f"dataframe is empty. user_id = '{user_id}'")
                 continue
 
             df_subset = self._get_df_sequential_date(df_subset)

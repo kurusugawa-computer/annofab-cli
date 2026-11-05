@@ -41,7 +41,7 @@ def save_image_from_data_uri_scheme(value: str, temp_dir: Path) -> Path:
     with Image.open(io.BytesIO(uri.data)) as img:
         image_file_path = temp_dir / image_file_name
         img.save(str(image_file_path), extension.upper())
-        logger.debug(f"Data URI Schemeの画像を {image_file_path!s} に保存しました。")
+        logger.debug(f"Data URI Schemeの画像を '{image_file_path!s}' に保存しました。")
         return image_file_path
 
 
@@ -85,15 +85,15 @@ class UploadInstruction(CommandLine):
 
                 try:
                     img_url = self.service.wrapper.upload_instruction_image(project_id, image_id, str(img_path))
-                    logger.debug(f"image uploaded. file={img_path}, instruction_image_url={img_url}")
+                    logger.debug(f"image uploaded. file='{img_path}', instruction_image_url='{img_url}'")
                     img_elm.attrib["src"] = img_url
                     img_path_dict[str(img_path)] = image_id
                 except Exception as e:  # pylint: disable=broad-except
-                    logger.warning(f"作業ガイドの画像登録に失敗しました。image_id={image_id}, img_path={img_path}, {e}")
+                    logger.warning(f"作業ガイドの画像登録に失敗しました。image_id='{image_id}', img_path='{img_path}', {e}")
                     continue
 
             else:
-                logger.warning(f"image does not exist. path={img_path}")
+                logger.warning(f"image does not exist. path='{img_path}'")
                 continue
 
         # body要素があればその中身、なければhtmlファイルの中身をアップロードする

@@ -106,11 +106,11 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            logger.warning(f"データが0件のため、'{output_file}' は出力しません。")
             return False
 
         if len(self.default_user_id_list) == 0:
-            logger.info(f"{self.phase_name}作業したタスクが0件なので（'first_{self.phase.value}_user_id'がすべて空欄）、{output_file} を出力しません。")
+            logger.info(f"{self.phase_name}作業したタスクが0件なので（'first_{self.phase.value}_user_id'がすべて空欄）、'{output_file}' を出力しません。")
             return False
 
         return True
@@ -267,7 +267,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         for user_index, user_id in enumerate(user_id_list):
             df_subset = df[df["user_id"] == user_id]
             if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                logger.debug(f"dataframe is empty. user_id = '{user_id}'")
                 continue
 
             source = ColumnDataSource(df_subset[required_columns])
@@ -345,7 +345,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         for user_index, user_id in enumerate(user_id_list):
             df_subset = self.df[self.df["user_id"] == user_id]
             if df_subset.empty:
-                logger.debug(f"dataframe is empty. user_id = {user_id}")
+                logger.debug(f"dataframe is empty. user_id = '{user_id}'")
                 continue
 
             source = ColumnDataSource(df_subset[required_columns])
@@ -422,7 +422,7 @@ class AbstractPhaseCumulativeProductivity(abc.ABC):
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
         self._plot_with_production_volume_selector(
             self._get_graph_spec_list(),
             self._get_production_volume_list_for_plot(include_input_data_count=include_input_data_count),
@@ -490,7 +490,7 @@ class AnnotatorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
@@ -548,7 +548,7 @@ class InspectorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         if target_user_id_list is not None:
             user_id_list = target_user_id_list
@@ -606,7 +606,7 @@ class AcceptorCumulativeProductivity(AbstractPhaseCumulativeProductivity):
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
 
         if target_user_id_list is not None:
             user_id_list = target_user_id_list

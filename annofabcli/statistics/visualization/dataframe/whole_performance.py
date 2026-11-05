@@ -46,7 +46,7 @@ class WholePerformance:
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.series) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            logger.warning(f"データが0件のため、'{output_file}' は出力しません。")
             return False
         return True
 
@@ -347,7 +347,7 @@ class WholePerformance:
         series = self.series[indexes]
 
         output_file.parent.mkdir(exist_ok=True, parents=True)
-        logger.debug(f"{output_file!s} を出力します。")
+        logger.debug(f"'{output_file!s}' を出力します。")
         series.to_csv(str(output_file), sep=",", encoding="utf_8_sig", header=False)
 
     @staticmethod

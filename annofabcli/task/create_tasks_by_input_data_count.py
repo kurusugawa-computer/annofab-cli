@@ -61,7 +61,8 @@ class CreatingTasksByInputDataCountMain:
             self.wait_for_completion(job["job_id"])
         else:
             logger.info(
-                f"以下のコマンドを実行すれば、タスク登録ジョブが終了するまで待ちます。 :: `annofabcli job wait --project_id {self.project_id} --job_type {job['job_type']} --job_id {job['job_id']}`"
+                f"以下のコマンドを実行すれば、タスク登録ジョブが終了するまで待ちます。 :: "
+                f"`annofabcli job wait --project_id '{self.project_id}' --job_type '{job['job_type']}' --job_id '{job['job_id']}'`"
             )
 
     def wait_for_completion(self, job_id: str) -> None:

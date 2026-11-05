@@ -91,7 +91,7 @@ class Task:
 
     def _validate_df_for_output(self, output_file: Path) -> bool:
         if len(self.df) == 0:
-            logger.warning(f"データが0件のため、{output_file} は出力しません。")
+            logger.warning(f"データが0件のため、'{output_file}' は出力しません。")
             return False
         return True
 
@@ -221,7 +221,7 @@ class Task:
 
             task_id = task["task_id"]
             if task_id not in task_histories:
-                logger.warning(f"引数`task_histories`の中にtask_id='{task_id}'に対応するタスク履歴がありません。 :: {project_id=}")
+                logger.warning(f"引数`task_histories`の中にtask_id='{task_id}'に対応するタスク履歴がありません。 :: project_id='{project_id}'")
 
             sub_task_histories = task_histories.get(task_id, [])
 
@@ -511,7 +511,7 @@ class Task:
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
         df = self.df
         production_volume_list = [
             ProductionVolumeColumn("task_count", "タスク"),
@@ -600,7 +600,7 @@ class Task:
         if not self._validate_df_for_output(output_file):
             return
 
-        logger.debug(f"{output_file} を出力します。")
+        logger.debug(f"'{output_file}' を出力します。")
         df = self.df.copy()
 
         df["diff_days_to_first_inspection_started"] = diff_days(df["first_inspection_started_datetime"], df["first_annotation_started_datetime"])

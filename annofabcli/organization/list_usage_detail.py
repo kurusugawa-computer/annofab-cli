@@ -117,7 +117,7 @@ class ListUsageDetail(CommandLine):
         with TemporaryDirectory() as temporary_dir:
             temporary_file = Path(temporary_dir) / "usage_status.csv"
             for index, month in enumerate(months, start=1):
-                logger.info(f"{index}/{len(months)}: 組織'{args.organization}'の{month}のエディタ利用状況明細を取得します。")
+                logger.info(f"{index}/{len(months)}: 組織'{args.organization}'の'{month}'のエディタ利用状況明細を取得します。")
                 csv_file, _ = self.service.api.get_organization_usage_status_detail(args.organization, month)
                 self.service.wrapper.download(csv_file["url"], temporary_file)
                 month_df = read_usage_detail_csv(temporary_file)

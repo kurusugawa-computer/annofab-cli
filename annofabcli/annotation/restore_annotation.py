@@ -142,21 +142,21 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
 
         logger.debug(f"{logger_prefix}phase='{task['phase']}', status='{task['status']}'")
         if task["status"] == TaskStatus.WORKING.value:
-            logger.info(f"{logger_prefix}タスクは作業中のため、処理をスキップします。 :: status={task['status']}")
+            logger.info(f"{logger_prefix}タスクは作業中のため、処理をスキップします。 :: status='{task['status']}'")
             return False
 
         if not self.include_complete_task and task["status"] == TaskStatus.COMPLETE.value:
-            logger.info(f"{logger_prefix}タスクは完了状態のため、処理をスキップします。完了状態のタスクを処理する場合は、 '--include_complete_task'を指定してください。 :: status={task['status']}")
+            logger.info(f"{logger_prefix}タスクは完了状態のため、処理をスキップします。完了状態のタスクを処理する場合は、 '--include_complete_task'を指定してください。 :: status='{task['status']}'")
             return False
 
         if not self.include_break_task and task["status"] == TaskStatus.BREAK.value:
-            logger.info(f"{logger_prefix}タスクは休憩中状態のため、処理をスキップします。休憩中状態のタスクを処理する場合は、 '--include_break_task'を指定してください。 :: status={task['status']}")
+            logger.info(f"{logger_prefix}タスクは休憩中状態のため、処理をスキップします。休憩中状態のタスクを処理する場合は、 '--include_break_task'を指定してください。 :: status='{task['status']}'")
             return False
 
         if not self.include_on_hold_task and task["status"] == TaskStatus.ON_HOLD.value:
             logger.info(
                 f"{logger_prefix}タスクは保留中状態のため、処理をスキップします。保留中状態のタスクにアノテーションをリストアする場合は、 "
-                f"'--include_on_hold_task'を指定してください。 :: status={task['status']}"
+                f"'--include_on_hold_task'を指定してください。 :: status='{task['status']}'"
             )
             return False
 
@@ -254,7 +254,7 @@ class RestoreAnnotationMain(CommandLineWithConfirm):
                     task_count += 1
 
         if target_task_ids is not None and len(tmp_target_task_ids) > 0:
-            logger.warning(f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、リストア対象のアノテーションデータに含まれていません。 :: {tmp_target_task_ids}")
+            logger.warning(f"'--task_id'で指定したタスクの内 {len(tmp_target_task_ids)} 件は、リストア対象のアノテーションデータに含まれていません。 :: '{tmp_target_task_ids}'")
 
         logger.info(f"{success_count} / {task_count} 件のタスクに対してアノテーションをリストアしました。")
 

@@ -60,5 +60,7 @@ def test_thread_cancellation_reuses_members_and_recovers_from_prefetch_failure(c
     else:
         assert len(member_requests) == (1 if assign_last_acceptor else 0)
     assert "2 / 2" in caplog.messages[-1]
+    for task_id in ["task1", "task2"]:
+        assert f"task_id = '{task_id}' の受け入れ取り消しが成功しました。" in caplog.text
     if prefetch_fails and assign_last_acceptor:
         assert any(record.levelno == logging.WARNING and record.exc_info for record in caplog.records)

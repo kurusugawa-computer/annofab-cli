@@ -275,13 +275,13 @@ class CopyAnnotationMain(CommandLineWithConfirm):
 
         logger.debug(f"コピー先タスク'{copy_target.dest_task_id}' :: phase='{dest_task['phase']}', status='{dest_task['status']}'")
         if dest_task["status"] == TaskStatus.WORKING.value:
-            logger.info(f"コピー先タスク'{copy_target.dest_task_id}'は作業中のため、アノテーションのコピーをスキップします。 :: status={dest_task['status']}")
+            logger.info(f"コピー先タスク'{copy_target.dest_task_id}'は作業中のため、アノテーションのコピーをスキップします。 :: status='{dest_task['status']}'")
             return False
 
         if not self.include_complete_task and dest_task["status"] == TaskStatus.COMPLETE.value:
             logger.info(
                 f"コピー先タスク'{copy_target.dest_task_id}'は完了状態のため、アノテーションのコピーをスキップします。"
-                f"完了状態のタスクにアノテーションをコピーする場合は、`--include_complete_task` を指定してください。 :: status={dest_task['status']}"
+                f"完了状態のタスクにアノテーションをコピーする場合は、`--include_complete_task` を指定してください。 :: status='{dest_task['status']}'"
             )
             return False
 
@@ -295,7 +295,7 @@ class CopyAnnotationMain(CommandLineWithConfirm):
         if not self.include_on_hold_task and dest_task["status"] == TaskStatus.ON_HOLD.value:
             logger.info(
                 f"コピー先タスク'{copy_target.dest_task_id}'は保留中状態のため、アノテーションのコピーをスキップします。"
-                f"保留中状態のタスクにアノテーションをコピーする場合は、`--include_on_hold_task` を指定してください。 :: status={dest_task['status']}"
+                f"保留中状態のタスクにアノテーションをコピーする場合は、`--include_on_hold_task` を指定してください。 :: status='{dest_task['status']}'"
             )
             return False
 

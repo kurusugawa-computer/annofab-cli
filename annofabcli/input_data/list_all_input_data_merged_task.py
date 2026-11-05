@@ -152,10 +152,10 @@ class ListInputDataMergedTask(CommandLine):
         def _download_and_load(dir_path: Path) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
             input_data_json_path = downloading_obj.download_input_data_json_to_dir(project_id, dir_path, is_latest=is_latest)
             task_json_path = downloading_obj.download_task_json_to_dir(project_id, dir_path, is_latest=is_latest)
-            logger.debug(f"{task_json_path} を読み込み中")
+            logger.debug(f"'{task_json_path}' を読み込み中")
             with task_json_path.open(encoding="utf-8") as f:
                 task_list: list[dict[str, Any]] = json.load(f)
-            logger.debug(f"{input_data_json_path} を読み込み中")
+            logger.debug(f"'{input_data_json_path}' を読み込み中")
             with input_data_json_path.open(encoding="utf-8") as f:
                 input_data_list: list[dict[str, Any]] = json.load(f)
             return input_data_list, task_list

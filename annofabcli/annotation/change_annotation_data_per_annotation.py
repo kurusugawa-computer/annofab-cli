@@ -404,7 +404,7 @@ class ChangeDataPerAnnotation(CommandLine):
         if args.task_id is not None:
             target_annotation_list, not_existing_task_ids = filter_annotation_items_by_task_ids(target_annotation_list, get_list_from_args(args.task_id))
             if not_existing_task_ids:
-                logger.warning(f"'--task_id'で指定したタスクの内 {len(not_existing_task_ids)} 件は、変更対象データに含まれていません。 :: {sorted(not_existing_task_ids)}")
+                logger.warning(f"'--task_id'で指定したタスクの内 {len(not_existing_task_ids)} 件は、変更対象データに含まれていません。 :: '{sorted(not_existing_task_ids)}'")
 
         project_id = args.project_id
 

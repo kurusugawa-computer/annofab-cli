@@ -48,14 +48,14 @@ def resolve_restrictions_to_delete_by_json(
         try:
             restriction_text = message_obj.get_restriction_text(restriction["additional_data_definition_id"], restriction["condition"])
         except ValueError as e:
-            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、削除しません。 :: restriction=`{restriction}`, error_message=`{e!s}`")
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないIDが含まれていたため、削除しません。 :: restriction='{restriction}', error_message='{e!s}'")
             continue
 
         if restriction not in old_restrictions:
-            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないため、削除しません。 :: `{restriction_text}`")
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は存在しないため、削除しません。 :: '{restriction_text}'")
             continue
         if restriction in restrictions_to_remove:
-            logger.warning(f"{index + 1}件目 :: 次の属性制約は入力内で重複しているため、削除しません。 :: `{restriction_text}`")
+            logger.warning(f"{index + 1}件目 :: 次の属性制約は入力内で重複しているため、削除しません。 :: '{restriction_text}'")
             continue
 
         restrictions_to_remove.append(restriction)

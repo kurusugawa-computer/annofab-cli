@@ -79,7 +79,7 @@ def get_only_selective_attribute(columns: list[AttributeValueKey]) -> list[Attri
     non_selective_attribute_names = {key for key, value in collections.Counter(attribute_name_list).items() if value > SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}
 
     if len(non_selective_attribute_names) > 0:
-        logger.debug(f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: {non_selective_attribute_names}")
+        logger.debug(f"以下の属性は値の個数が{SELECTIVE_ATTRIBUTE_VALUE_MAX_COUNT}を超えていたため、集計しません。 :: '{non_selective_attribute_names}'")
 
     return [(label, attribute_name, attribute_value) for (label, attribute_name, attribute_value) in columns if (label, attribute_name) not in non_selective_attribute_names]
 
@@ -134,7 +134,7 @@ def plot_label_histogram(
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(f"以下のラベルは、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
+            logger.debug(f"以下のラベルは、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: '{set(df.columns) - set(columns)}'")
     else:
         columns = df.columns
 
@@ -238,7 +238,7 @@ def plot_attribute_histogram(  # noqa: PLR0915
         # すべての値が0である列を除外する
         columns = [col for col in df.columns if df[col].sum() > 0]
         if len(columns) < len(df.columns):
-            logger.debug(f"以下の属性値は、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: {set(df.columns) - set(columns)}")
+            logger.debug(f"以下の属性値は、すべてのタスクでアノテーション数が0であるためヒストグラムを描画しません。 :: '{set(df.columns) - set(columns)}'")
     else:
         columns = df.columns
 
@@ -508,20 +508,20 @@ class VisualizeAnnotationCount(CommandLine):
             label_name_list = annofabcli.common.cli.get_list_from_args(args.label_name)
             target_label_names, not_found_names = annotation_specs.get_label_keys_by_label_names(label_name_list)
             if len(not_found_names) > 0:
-                logger.warning(f"指定されたラベル名のうち、アノテーション仕様に見つからなかったラベル名があります。 :: {not_found_names}")
+                logger.warning(f"指定されたラベル名のうち、アノテーション仕様に見つからなかったラベル名があります。 :: '{not_found_names}'")
 
         if args.additional_attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.additional_attribute_name)
             additional_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
             if len(not_found_names) > 0:
-                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: '{not_found_names}'")
             return AttributeNameOptions(target_label_names=target_label_names, additional_attribute_names=additional_attribute_names)
 
         if args.attribute_name is not None:
             attribute_name_str_list = annofabcli.common.cli.get_list_from_args(args.attribute_name)
             specified_attribute_names, not_found_names = annotation_specs.get_attribute_name_keys_by_attribute_names(attribute_name_str_list)
             if len(not_found_names) > 0:
-                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: {not_found_names}")
+                logger.warning(f"指定された属性名のうち、アノテーション仕様に見つからなかった属性名があります。 :: '{not_found_names}'")
             return AttributeNameOptions(target_label_names=target_label_names, specified_attribute_names=specified_attribute_names)
 
         return AttributeNameOptions(target_label_names=target_label_names)

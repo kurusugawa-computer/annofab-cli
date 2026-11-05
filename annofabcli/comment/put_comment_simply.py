@@ -100,7 +100,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
 
         if task["account_id"] != self.service.api.account_id:
             self.service.wrapper.change_task_operator(project_id, task_id, self.service.api.account_id)
-            logger.debug(f"{task_id}: 担当者を自分自身に変更しました。")
+            logger.debug(f"'{task_id}': 担当者を自分自身に変更しました。")
 
         changed_task = self.service.wrapper.change_task_status_to_working(project_id, task_id)
         return changed_task
@@ -213,7 +213,7 @@ class PutCommentSimplyMain(CommandLineWithConfirm):
             logger.warning(f"{logging_prefix} : task_id='{task_id}' のタスクは存在しないので、スキップします。")
             return False
 
-        logger.debug(f"{logging_prefix} : task_id = {task['task_id']}, status = {task['status']}, phase = {task['phase']}, ")
+        logger.debug(f"{logging_prefix} : task_id = '{task['task_id']}', status = '{task['status']}', phase = '{task['phase']}', ")
 
         needs_cancel_acceptance = self._needs_cancel_acceptance(task, cancel_acceptance=cancel_acceptance)
         if not needs_cancel_acceptance and not self._can_add_comment(task=task, include_break_task=include_break_task, include_on_hold_task=include_on_hold_task):

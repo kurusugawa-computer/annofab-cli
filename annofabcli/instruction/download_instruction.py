@@ -72,11 +72,11 @@ class DownloadInstructionMain:
                 instruction_image_id = _get_instruction_image_id(src_value)
                 img_output_path = img_dir / instruction_image_id
                 self.download_instruction_image(project_id, src_value, img_output_path)
-                logger.debug(f"{src_value} を {img_output_path} にダウンロードしました。")
+                logger.debug(f"'{src_value}' を '{img_output_path}' にダウンロードしました。")
                 img_elm.attrib["src"] = f"img/{instruction_image_id}"
             except Exception as e:  # pylint: disable=broad-except
                 logger.warning(e)
-                logger.warning(f"{src_value} のダウンロードに失敗しました。")
+                logger.warning(f"'{src_value}' のダウンロードに失敗しました。")
 
         return pq.outer_html()
 
@@ -95,7 +95,7 @@ class DownloadInstructionMain:
         if history_id is None:
             content = self.service.wrapper.get_latest_instruction(project_id)
             if content is None:
-                logger.warning(f"project_id={project_id} のプロジェクトに作業ガイドは設定されていなかったので、ダウンロードできませんでした。")
+                logger.warning(f"project_id='{project_id}' のプロジェクトに作業ガイドは設定されていなかったので、ダウンロードできませんでした。")
                 return
             str_instruction_html = content["html"]
         else:
@@ -108,7 +108,7 @@ class DownloadInstructionMain:
 
         output_html = output_dir / "index.html"
         output_html.write_text(str_instruction_html, encoding="utf-8")
-        logger.debug(f"{output_html} をダウンロードしました。")
+        logger.debug(f"'{output_html}' をダウンロードしました。")
 
 
 class DownloadInstruction(CommandLine):
