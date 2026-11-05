@@ -17,6 +17,7 @@ Available Commands
 
    create
    delete
+   delete_per_supplementary_data
    list
    put
    update

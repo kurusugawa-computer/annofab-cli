@@ -125,16 +125,6 @@ CSVの列は、JSONの各キーに対応しています。
 
     $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json --include_complete_task
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $ annofabcli comment create_inspection --project_id prj1 --json file://comment.json \
-    --parallelism 4 --yes
-
 Usage Details
 =================================
 

@@ -57,18 +57,6 @@ Examples
     完了状態のタスクのアノテーションは、デフォルトでは変更できません。 ``--include_complete_task`` を指定すれば、完了状態のタスクに含まれるアノテーションも変更できます。ただし、``--include_complete_task`` はオーナーロールを持つユーザーでしか実行できません。
 
 
-並列に処理する
---------------------------
-
-``--parallelism`` で並列に処理するタスク数（2～4）を指定できます。指定しない場合は逐次処理します。
-並列処理する場合は、``--yes`` も指定してください。
-
-.. code-block::
-
-    $ annofabcli annotation delete_invalid_attribute_value --project_id prj1 --task_id file://task.txt \
-    --backup backup_dir/ --parallelism 4 --yes
-
-
 Usage Details
 =================================
 

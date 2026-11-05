@@ -7,7 +7,7 @@ import logging.handlers
 import sys
 import tempfile
 from collections.abc import Callable
-from multiprocessing import Pool
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -658,8 +658,8 @@ class VisualizingStatisticsMain:
 
         wrap = functools.partial(self.visualize_statistics_wrapper, root_output_dir=root_output_dir)
         if parallelism is not None:
-            with Pool(parallelism) as pool:
-                result_list = pool.map(wrap, project_id_list)
+            with ThreadPoolExecutor(max_workers=parallelism) as executor:
+                result_list = list(executor.map(wrap, project_id_list))
                 output_project_dir_list = [e for e in result_list if e is not None]
         else:
             for project_id in project_id_list:

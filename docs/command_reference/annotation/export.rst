@@ -71,10 +71,8 @@ CSV出力には対応していません。
 
 .. code-block:: bash
 
-    $ annofabcli annotation export --project_id prj1 --task_id task1 task2 task3 --output_dir annotations/ --parallelism 3
+    $ annofabcli annotation export --project_id prj1 --task_id task1 task2 task3 --output_dir annotations/
 
-``--parallelism`` を指定すると、タスク単位で並列に取得します。
-指定しない場合は逐次処理します。各タスク内の入力データは逐次処理します。
 外部ファイルも取得します。
 
 .. code-block:: text

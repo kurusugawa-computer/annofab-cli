@@ -103,17 +103,6 @@ Examples
 
 
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $  annofabcli comment put_inspection_simply --project_id prj1 --task_id t1 t2 t3 t4 \
-    --comment "枠がズレています。" --parallelism 4 --yes
-
-
 Usage Details
 =================================
 

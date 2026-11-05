@@ -572,9 +572,7 @@ class Task:
 
         bokeh_obj = bokeh.layouts.gridplot(nested_figure_list)
         output_file.parent.mkdir(exist_ok=True, parents=True)
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh_obj)
+        bokeh.plotting.save(bokeh_obj, filename=output_file, title=output_file.stem, resources="cdn")
         logger.debug(f"'{output_file}'を出力しました。")
 
     def plot_histogram_of_others(self, output_file: Path, *, metadata: dict[str, Any] | None = None) -> None:
@@ -685,9 +683,7 @@ class Task:
 
         bokeh_obj = bokeh.layouts.gridplot(nested_figure_list)
         output_file.parent.mkdir(exist_ok=True, parents=True)
-        bokeh.plotting.reset_output()
-        bokeh.plotting.output_file(output_file, title=output_file.stem)
-        bokeh.plotting.save(bokeh_obj)
+        bokeh.plotting.save(bokeh_obj, filename=output_file, title=output_file.stem, resources="cdn")
         logger.debug(f"'{output_file}'を出力しました。")
 
     def to_csv(self, output_file: Path) -> None:

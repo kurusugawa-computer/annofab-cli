@@ -105,19 +105,6 @@ Examples
 ``--include_on_hold_task`` を指定すると、保留中状態のタスクにも全体アノテーションを作成できます。チェッカーロールで作成した場合、作成後は未着手状態になります。
 
 
-並列処理
-----------------------------------------------------
-
-``--parallelism`` を指定すると、複数のタスクを並列で処理できます。
-並列処理を使用する場合は、 ``--yes`` も指定してください。
-
-.. code-block::
-
-    $ annofabcli annotation create_classification --project_id prj1 \
-    --task_id file://task_id.txt --label_name weather \
-    --parallelism 4 --yes
-
-
 Usage Details
 =================================
 

@@ -64,17 +64,6 @@ Examples
 
 
 
-並列処理
-----------------------------------------------
-
-以下のコマンドは、並列数4で実行します。
-
-.. code-block::
-
-    $  annofabcli task change_status_to_on_hold --project_id prj1 --task_id file://task.txt \
-    --parallelism 4 --yes
-
-
 Usage Details
 =================================
 

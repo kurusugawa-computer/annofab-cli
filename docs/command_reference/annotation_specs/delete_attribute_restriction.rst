@@ -4,25 +4,17 @@ annotation_specs delete_attribute_restriction
 
 Description
 =================================
-アノテーション仕様の属性制約を削除します。
+指定した属性に紐づくアノテーション仕様の属性制約を削除します。
+``--attribute_id`` または ``--attribute_name_en`` が必須です。
+
+制約を個別指定する場合は、:doc:`delete_attribute_restriction_per_restriction` を使用してください。
+従来の ``--restriction_json`` は、そのコマンドに移動しました。
 
 
 
 
 Examples
 =================================
-
-JSONで指定した属性制約を削除する
-----------------------------------------------
-
-``--restriction_json`` を指定すると、指定した属性制約のJSONと完全一致する制約を削除します。
-
-.. code-block::
-
-    $ annofabcli annotation_specs delete_attribute_restriction \
-     --project_id prj1 \
-     --restriction_json file://restrictions.json
-
 
 属性名(英語)に紐づく属性制約をすべて削除する
 ----------------------------------------------

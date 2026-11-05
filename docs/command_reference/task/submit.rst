@@ -31,13 +31,6 @@ Examples
     $ annofabcli task submit --project_id prj1 --task_id file://task_id.txt \
     --task_query '{"status":"not_started"}'
 
-並列数4で実行するには、``--parallelism`` と ``--yes`` を指定します。
-
-.. code-block::
-
-    $ annofabcli task submit --project_id prj1 --task_id file://task_id.txt \
-    --parallelism 4 --yes
-
 Usage Details
 =================================
 
