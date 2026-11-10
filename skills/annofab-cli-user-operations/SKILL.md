@@ -39,6 +39,7 @@ $ pip install annofabcli
 ## アノテーション仕様に関するコマンド
 * `annotation import`などアノテーション関連のコマンドを実行する上で、アノテーション仕様のラベルと属性を参照する場合は、 `annotation_specs list_annotation_import_info`を使ってください。
 * アノテーション仕様の変更/検査などを実施する際は、[アノテーション仕様のガイドライン](references/annotation-spec-guidelines.md)を参照してください。
+* 属性の種類を変更すると、既存アノテーションの属性値が期待通りにならない場合があります。変更時は、同ガイドラインの「属性の種類の変更」を参照し、`annotation normalize_attribute_type`による正規化の必要性を確認してください。
 
 
 ## アノテーションの変更
