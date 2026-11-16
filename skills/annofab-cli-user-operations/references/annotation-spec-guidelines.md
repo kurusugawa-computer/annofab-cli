@@ -32,7 +32,6 @@ https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation_specs/
 アノテーション仕様で属性の種類を変更しただけでは、既存アノテーションの属性値が期待通りにならない場合があります。
 たとえば、自由記述複数行（`text`）から自由記述1行（`comment`）に変更した直後は、アノテーションエディタ画面やダウンロードしたアノテーションZIPで属性値が空欄になる可能性があります。
 その旨をユーザーに伝え、変更後に`annotation normalize_attribute_type`で属性値の型を現在のアノテーション仕様に合わせることを提案してください。
-対応する変換や変換できない値の扱いは、[コマンドリファレンス](https://annofab-cli.readthedocs.io/ja/latest/command_reference/annotation/normalize_attribute_type.html)を参照してください。
 実行する場合は、まず`--dry_run`で変更予定を確認し、更新はSKILL.mdの「リソースを変更するコマンド」に従ってユーザーの承認を得てから実行してください。
 
 ### 整数属性
